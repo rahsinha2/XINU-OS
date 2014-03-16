@@ -31,7 +31,7 @@ APPCOMPS := apps        \
 DEVICES  := loopback    \
             tty         \
             uart-pl011  \
-            smc91111    \
+            smc91    \
             ethloop     \
             raw         \
             tcp         \
