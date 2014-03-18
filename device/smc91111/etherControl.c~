@@ -17,11 +17,11 @@ devcall etherControl(device *devptr, int req, long arg1, long arg2)
     struct ether *ethptr;
 
     ethptr = &ethertab[devptr->minor];
-//    udev = ethptr->csr;
-    /*if (udev == NULL)
+    udev = ethptr->csr;
+    if (udev == NULL)
     {
         return SYSERR;
-    }*/
+    }
 
    
 

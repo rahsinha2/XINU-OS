@@ -33,7 +33,14 @@ devcall etherInit(device *devptr)
     {
         goto err;
     }
-   
+
+     /* The SMSC LAN9512 on the Raspberry Pi does not have an EEPROM attached.
+     * The EEPROM is normally used to store the MAC address of the adapter,
+     * along with some other information.  As a result, software needs to set
+     * the MAC address to a value of its choosing (such as a random number).  */
+    randomEthAddr(ethptr->devAddress);
+
+    
     return OK;
 
 

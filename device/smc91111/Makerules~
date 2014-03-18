@@ -1,7 +1,7 @@
 # This Makefile contains rules to build this directory.
 
 # Name of this component (the directory this file is stored in)
-COMP = device/smsc9512
+COMP = device/smc91111
 
 # Source files for this component
 C_FILES =                \

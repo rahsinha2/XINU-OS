@@ -3,7 +3,6 @@
  */
 /* Embedded Xinu, Copyright (C) 2008, 2013.  All rights reserved. */
 
-#include "smc91111.h"
 #include <ether.h>
 #include <stdio.h>
 

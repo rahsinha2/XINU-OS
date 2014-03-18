@@ -16,5 +16,19 @@ devcall etherWrite(device *devptr, const void *buf, uint len)
 {
     struct ether *ethptr;
    
+    uint8_t *sendbuf;
+    uint32_t tx_cmd_a, tx_cmd_b;
+
+    ethptr = &ethertab[devptr->minor];
+    if (ethptr->state != ETH_STATE_UP ||
+        len < ETH_HEADER_LEN || len > ETH_HDR_LEN + ETH_MTU)
+    {
+        return SYSERR;
+    }
+
+    /* Get a buffer for the packet.  (This may block.)  */
+    req = bufget(ethptr->outPool);
+
+  
     return len;
 }
