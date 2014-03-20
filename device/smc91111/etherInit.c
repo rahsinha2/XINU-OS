@@ -20,6 +20,7 @@ struct ether ethertab[NETHER];
 devcall etherInit(device *devptr)
 {
     struct ether *ethptr;
+    int i;
     
     /* Initialize the static `struct ether' for this device.  */
     ethptr = &ethertab[devptr->minor];
@@ -33,7 +34,15 @@ devcall etherInit(device *devptr)
     {
         goto err;
     }
-   
+    
+    /* Setting base address for IO operation on ethernet device*/
+    ethptr->iobase = CONFIG_SMC91111_BASE;
+    
+    SMC_SELECT_BANK(ethptr, 1);
+    
+    /* Getting MAC address from EPROM on Ethernet Device*/
+	  for (i = 0; i < 6; ++i)
+		  ethptr->devAddress[i] = SMC_inb(ethptr, (ADDR0_REG + i));
     return OK;
 
 

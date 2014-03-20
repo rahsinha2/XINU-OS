@@ -76,8 +76,6 @@ struct ether
 {
     uchar state;                /**< ETH_STATE_*above                   */
     device *phy;                /**< physical eth device for Tx DMA     */
-    
-    int iobase;                 /**< IO base address                    */ 
 
     /* Pointers to associated structures */
     device *dev;                /**< eth device structure               */

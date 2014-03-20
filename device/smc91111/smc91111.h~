@@ -29,13 +29,16 @@
 #ifndef _SMC91111_H_
 #define _SMC91111_H_
 
+#include <stdint.h>
+#include <stddef.h>
+#include <ether.h>
+
 /*
  * This function may be called by the board specific initialisation code
  * in order to override the default mac address.
  */
 
 void smc_set_mac_addr (const unsigned char *addr);
-
 
 /* I want some simple types */
 
@@ -44,7 +47,7 @@ typedef unsigned short			word;
 typedef unsigned long int		dword;
 
 struct smc91111_priv{
-	u8 dev_num;
+	//u8 dev_num;
 };
 
 /*
@@ -503,5 +506,69 @@ enum {
  --------------------------------------------------------------------------*/
 #define SMC_INTERRUPT_MASK   (IM_EPH_INT | IM_RX_OVRN_INT | IM_RCV_INT | \
 	IM_MDINT)
+
+
+/*SMC91111 Base Address*/
+#define CONFIG_SMC91111_BASE	0x10010000
+
+
+static inline word SMC_inw(struct ether *dev, dword offset)
+{
+	word v;
+	v = *((volatile word*)(dev->iobase + offset));
+	barrier(); *(volatile uint32_t*)(0xc0000000);
+	return v;
+}
+
+static inline void SMC_outw(struct ether *dev, word value, dword offset)
+{
+	*((volatile word*)(dev->iobase + offset)) = value;
+	barrier(); *(volatile uint32_t*)(0xc0000000);
+}
+
+static inline byte SMC_inb(struct ether *dev, dword offset)
+{
+	word  _w;
+
+	_w = SMC_inw(dev, offset & ~((dword)1));
+	return (offset & 1) ? (byte)(_w >> 8) : (byte)(_w);
+}
+
+static inline void SMC_outb(struct ether *dev, byte value, dword offset)
+{
+	word  _w;
+
+	_w = SMC_inw(dev, offset & ~((dword)1));
+	if (offset & 1)
+		*((volatile word*)(dev->iobase + (offset & ~((dword)1)))) =
+			(value<<8) | (_w & 0x00ff);
+	else
+		*((volatile word*)(dev->iobase + offset)) =
+			value | (_w & 0xff00);
+}
+
+static inline void SMC_insw(struct ether *dev, dword offset,
+	volatile uchar* buf, dword len)
+{
+	volatile word *p = (volatile word *)buf;
+
+	while (len-- > 0) {
+		*p++ = SMC_inw(dev, offset);
+		barrier();
+		*((volatile uint32_t*)(0xc0000000));
+	}
+}
+
+static inline void SMC_outsw(struct ether *dev, dword offset,
+	uchar* buf, dword len)
+{
+	volatile word *p = (volatile word *)buf;
+
+	while (len-- > 0) {
+		SMC_outw(dev, *p++, offset);
+		barrier();
+		*(volatile uint32_t*)(0xc0000000);
+	}
+}
 
 #endif  /* _SMC_91111_H_ */

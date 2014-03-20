@@ -20,6 +20,7 @@ struct ether ethertab[NETHER];
 devcall etherInit(device *devptr)
 {
     struct ether *ethptr;
+    int i;
     
     /* Initialize the static `struct ether' for this device.  */
     ethptr = &ethertab[devptr->minor];
@@ -33,14 +34,15 @@ devcall etherInit(device *devptr)
     {
         goto err;
     }
-
-     /* The SMSC LAN9512 on the Raspberry Pi does not have an EEPROM attached.
-     * The EEPROM is normally used to store the MAC address of the adapter,
-     * along with some other information.  As a result, software needs to set
-     * the MAC address to a value of its choosing (such as a random number).  */
-    randomEthAddr(ethptr->devAddress);
-
     
+    /* Setting base address for IO operation on ethernet device*/
+    ethptr->iobase = CONFIG_SMC91111_BASE;
+    
+    SMC_SELECT_BANK(ethptr, 1);
+    
+    /* Getting MAC address from EPROM on Ethernet Device*/
+	  for (i = 0; i < 6; ++i)
+		  ethptr->devAddress[i] = SMC_inb(ethptr, (ADDR0_REG + i));
     return OK;
 
 

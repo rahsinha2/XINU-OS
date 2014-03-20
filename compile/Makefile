@@ -323,6 +323,13 @@ indent:
 	$(INDENT) $(INDENT_ARGS) $(INDENT_TYPES) $(INDENT_FILES)
 	rm -f $(INDENT_FILES:%=%~)
 
+qemu:
+	qemu-system-arm -M versatilepb -m 128M -nographic -cpu arm1176 -net nic,model=smc91c111 -kernel xinu.boot
+
+gdb:
+	qemu-system-arm -M versatilepb -m 128M -nographic -cpu arm1176 -net nic,model=smc91c111 -kernel xinu.boot -S -gdb tcp::5556
+
+
 # XXX: Hack to deal with special device directories.
 DEVDOCCOMPS := $(DEVCOMPS)
 ifneq ($(filter uart-%,$(DEVICES)),)

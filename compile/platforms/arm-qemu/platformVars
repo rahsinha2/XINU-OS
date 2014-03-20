@@ -14,8 +14,8 @@ PLATFORM_NAME := ARM QEMU
 # '-cpu arm1176'.  Although QEMU can emulate many different ARM CPUs, ARM1176 is
 # chosen here because it is the same core used on the Raspberry Pi (Embedded
 # Xinu platform "arm-rpi").
-CFLAGS   += -mcpu=arm1176jz-s
-ASFLAGS  += -mcpu=arm1176jz-s
+CFLAGS   += -mcpu=arm1176jz-s -g
+ASFLAGS  += -mcpu=arm1176jz-s -g
 
 # Add a define so we can test for ARM QEMU in C code if absolutely needed
 DEFS     += -D_XINU_PLATFORM_ARM_QEMU_
