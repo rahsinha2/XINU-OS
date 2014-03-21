@@ -66,6 +66,9 @@ struct smc91111_priv{
 
 #define	SMC_IO_EXTENT	16
 
+/*For Buffer pooling*/
+#define SMC_MAX_TX_REQUESTS 1
+#define SMC_MAX_RX_REQUESTS 1
 
 /*---------------------------------------------------------------
  .
@@ -516,14 +519,14 @@ static inline word SMC_inw(struct ether *dev, dword offset)
 {
 	word v;
 	v = *((volatile word*)(dev->iobase + offset));
-	barrier(); *(volatile uint32_t*)(0xc0000000);
+	*(volatile uint32_t*)(0xc0000000);
 	return v;
 }
 
 static inline void SMC_outw(struct ether *dev, word value, dword offset)
 {
 	*((volatile word*)(dev->iobase + offset)) = value;
-	barrier(); *(volatile uint32_t*)(0xc0000000);
+	*(volatile uint32_t*)(0xc0000000);
 }
 
 static inline byte SMC_inb(struct ether *dev, dword offset)
@@ -554,7 +557,6 @@ static inline void SMC_insw(struct ether *dev, dword offset,
 
 	while (len-- > 0) {
 		*p++ = SMC_inw(dev, offset);
-		barrier();
 		*((volatile uint32_t*)(0xc0000000));
 	}
 }
@@ -566,9 +568,30 @@ static inline void SMC_outsw(struct ether *dev, dword offset,
 
 	while (len-- > 0) {
 		SMC_outw(dev, *p++, offset);
-		barrier();
 		*(volatile uint32_t*)(0xc0000000);
 	}
 }
+
+/*
+ . Function: smc_reset( void )
+ . Purpose:
+ .	This sets the SMC91111 chip to its normal state, hopefully from whatever
+ .	mess that any other DOS driver has put it in.
+ .
+ . Maybe I should reset more registers to defaults in here?  SOFTRST  should
+ . do that for me.
+ .
+ . Method:
+ .	1.  send a SOFT RESET
+ .	2.  wait for it to finish
+ .	3.  enable autorelease mode
+ .	4.  reset the memory management unit
+ .	5.  clear all interrupts
+ .
+*/
+void smc_reset (struct ether *dev);
+
+
+void smc_enable(struct ether *dev);
 
 #endif  /* _SMC_91111_H_ */

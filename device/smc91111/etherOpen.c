@@ -10,23 +10,66 @@
 #include <ether.h>
 #include <stdlib.h>
 #include <string.h>
+#include <interrupt.h>
 
 
 /* Implementation of etherOpen() for the smsc9512; see the documentation for
  * this function in ether.h.  */
-/**
- * @details
- *
- * SMSC LAN9512-specific notes:  as a work-around to use USB's dynamic device
- * model at the same time as Xinu's static device model, this function will
- * block until the corresponding USB device has actually been attached to the
- * USB.  Strictly speaking, there is no guarantee as to when this will actually
- * occur, even if the device is non-removable.
- */
+
+
 devcall etherOpen(device *devptr)
 {
+    struct ether *ethptr;
+    irqmask im;
     int retval = SYSERR;
 
-   
+    im = disable();
+
+    /* Fail if device is not down.  */
+    ethptr = &ethertab[devptr->minor];
+    if (ethptr->state != ETH_STATE_DOWN)
+    {
+        goto out_restore;
+    }
+
+    /* Create buffer pool for Tx transfers.  */
+    ethptr->outPool = bfpalloc(ETH_MAX_PKT_LEN,
+                               SMC_MAX_TX_REQUESTS);
+    if (ethptr->outPool == SYSERR)
+    {
+        goto out_restore;
+    }
+
+    /* Create buffer pool for Rx packets (not the actual USB transfers, which
+     * are allocated separately).  */
+    ethptr->inPool = bfpalloc(sizeof(struct ethPktBuffer) + ETH_MAX_PKT_LEN,
+                              SMC_MAX_RX_REQUESTS);
+    if (ethptr->inPool == SYSERR)
+    {
+        goto out_free_out_pool;
+    }
+
+    /* We're abusing the csr field to store a pointer to the USB device
+     * structure.  At least it's somewhat equivalent, since it's what we need to
+     * actually communicate with the device hardware.  */
+    //udev = ethptr->csr;
+    
+    /* Soft reset the device */    
+    smc_reset (ethptr);
+    
+    /* Enable the device */
+  	smc_enable (ethptr);
+    
+    /* Success!  Set the device to ETH_STATE_UP. */
+    ethptr->state = ETH_STATE_UP;
+    retval = OK;
+    goto out_restore;
+
+out_free_in_pool:
+    bfpfree(ethptr->inPool);
+out_free_out_pool:
+    bfpfree(ethptr->outPool);
+out_restore:
+    restore(im);
     return retval;
 }

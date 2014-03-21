@@ -1,159 +1,114 @@
-/*------------------------------------------------------------------------
- . smc91111.c
- . This is a driver for SMSC's 91C111 single-chip Ethernet device.
- .
- . (C) Copyright 2002
- . Sysgo Real-Time Solutions, GmbH <www.elinos.com>
- . Rolf Offermanns <rof@sysgo.de>
- .
- . Copyright (C) 2001 Standard Microsystems Corporation (SMSC)
- .	 Developed by Simple Network Magic Corporation (SNMC)
- . Copyright (C) 1996 by Erik Stahlman (ES)
- .
- * SPDX-License-Identifier:	GPL-2.0+
- .
- . Information contained in this file was obtained from the LAN91C111
- . manual from SMC.  To get a copy, if you really want one, you can find
- . information under www.smsc.com.
- .
- .
- . "Features" of the SMC chip:
- .   Integrated PHY/MAC for 10/100BaseT Operation
- .   Supports internal and external MII
- .   Integrated 8K packet memory
- .   EEPROM interface for configuration
- .
- . Arguments:
- .	io	= for the base address
- .	irq	= for the IRQ
- .
- . author:
- .	Erik Stahlman				( erik@vt.edu )
- .	Daris A Nevil				( dnevil@snmc.com )
- .
- .
- . Hardware multicast code from Peter Cammaert ( pc@denkart.be )
- .
- . Sources:
- .    o	  SMSC LAN91C111 databook (www.smsc.com)
- .    o	  smc9194.c by Erik Stahlman
- .    o	  skeleton.c by Donald Becker ( becker@cesdis.gsfc.nasa.gov )
- .
- . History:
- .	06/19/03  Richard Woodruff Made u-boot environment aware and added mac addr checks.
- .	10/17/01  Marco Hasewinkel Modify for DNP/1110
- .	07/25/01  Woojung Huh	   Modify for ADS Bitsy
- .	04/25/01  Daris A Nevil	   Initial public release through SMSC
- .	03/16/01  Daris A Nevil	   Modified smc9194.c for use with LAN91C111
- ----------------------------------------------------------------------------*/
 
 #include "smc91111.h"
-#include <stdint.h>
-#include <stddef.h>
-/* Use power-down feature of the chip */
-#define POWER_DOWN	0
-
-#define NO_AUTOPROBE
-
-#define SMC_DEBUG 0
-
-#if SMC_DEBUG > 1
-static const char version[] =
-	"smc91111.c:v1.0 04/25/01 by Daris A Nevil (dnevil@snmc.com)\n";
-#endif
-
-/* Autonegotiation timeout in seconds */
-#ifndef CONFIG_SMC_AUTONEG_TIMEOUT
-#define CONFIG_SMC_AUTONEG_TIMEOUT 10
-#endif
-
-/*------------------------------------------------------------------------
- .
- . Configuration options, for the experienced user to change.
- .
- -------------------------------------------------------------------------*/
-
+#include <clock.h>
+#include <ether.h>
+#include <stdio.h>
+/*CREDIT*/
 /*
- . Wait time for memory to be free.  This probably shouldn't be
- . tuned that much, as waiting for this means nothing else happens
- . in the system
-*/
-#define MEMORY_WAIT_TIME 16
-
-
-#if (SMC_DEBUG > 2 )
-#define PRINTK3(args...) printf(args)
-#else
-#define PRINTK3(args...)
-#endif
-
-#if SMC_DEBUG > 1
-#define PRINTK2(args...) printf(args)
-#else
-#define PRINTK2(args...)
-#endif
-
-#ifdef SMC_DEBUG
-#define PRINTK(args...) printf(args)
-#else
-#define PRINTK(args...)
-#endif
-
-
-/*------------------------------------------------------------------------
- .
- . The internal workings of the driver.	 If you are changing anything
- . here with the SMC stuff, you should have the datasheet and know
- . what you are doing.
- .
- -------------------------------------------------------------------------*/
-
-/* Memory sizing constant */
-#define LAN91C111_MEMORY_MULTIPLIER	(1024*2)
-
-
-/*SMC91111 Base Address*/
-#define CONFIG_SMC91111_BASE	0x10010000
-
-#define SMC_DEV_NAME "SMC91111"
-#define SMC_PHY_ADDR 0x0000
-#define SMC_ALLOC_MAX_TRY 5
-#define SMC_TX_TIMEOUT 30
-
-#define SMC_PHY_CLOCK_DELAY 1000
-
-#define ETH_ZLEN 60
-#define USE_32_BIT  1
-
-#ifdef SHARED_RESOURCES
-extern void swap_to(int device_id);
-#else
-# define swap_to(x)
-#endif
-
-#ifndef CONFIG_SMC91111_EXT_PHY
-static void smc_phy_configure();
-#endif /* !CONFIG_SMC91111_EXT_PHY */
-
-/*
- ------------------------------------------------------------
- .
- . Internal routines
- .
- ------------------------------------------------------------
+ * Below functions are copies from U-boot smc91111 drivers and altered for xinu on QEMU
 */
 
+
+/* Only one release command at a time, please */
+static inline void smc_wait_mmu_release_complete (struct eth_device *dev)
+{
+	int count = 0;
+
+	/* assume bank 2 selected */
+	while (SMC_inw (dev, MMU_CMD_REG) & MC_BUSY) {
+		udelay (1);	/* Wait until not busy */
+		if (++count > 200)
+			break;
+	}
+}
+
 /*
- * input and output functions
- *
- * Implemented due to inx,outx macros accessing the device improperly
- * and putting the device into an unkown state.
- *
- * For instance, on Sharp LPD7A400 SDK, affects were chip memory
- * could not be free'd (hence the alloc failures), duplicate packets,
- * packets being corrupt (shifted) on the wire, etc.  Switching to the
- * inx,outx functions fixed this problem.
- */
+ . Function: smc_reset( void )
+ . Purpose:
+ .	This sets the SMC91111 chip to its normal state, hopefully from whatever
+ .	mess that any other DOS driver has put it in.
+ .
+ . Maybe I should reset more registers to defaults in here?  SOFTRST  should
+ . do that for me.
+ .
+ . Method:
+ .	1.  send a SOFT RESET
+ .	2.  wait for it to finish
+ .	3.  enable autorelease mode
+ .	4.  reset the memory management unit
+ .	5.  clear all interrupts
+ .
+*/
+
+void smc_reset (struct ether *dev)
+{
+
+	/* This resets the registers mostly to defaults, but doesn't
+	   affect EEPROM.  That seems unnecessary */
+	SMC_SELECT_BANK (dev, 0);
+	SMC_outw (dev, RCR_SOFTRST, RCR_REG);
+
+	/* Setup the Configuration Register */
+	/* This is necessary because the CONFIG_REG is not affected */
+	/* by a soft reset */
+
+	SMC_SELECT_BANK (dev, 1);
+#if defined(CONFIG_SMC91111_EXT_PHY)
+	SMC_outw (dev, CONFIG_DEFAULT | CONFIG_EXT_PHY, CONFIG_REG);
+#else
+	SMC_outw (dev, CONFIG_DEFAULT, CONFIG_REG);
+#endif
 
 
+	/* Release from possible power-down state */
+	/* Configuration register is not affected by Soft Reset */
+	SMC_outw (dev, SMC_inw (dev, CONFIG_REG) | CONFIG_EPH_POWER_EN,
+		CONFIG_REG);
+
+	SMC_SELECT_BANK (dev, 0);
+
+	/* this should pause enough for the chip to be happy */
+	udelay (10);
+
+	/* Disable transmit and receive functionality */
+	SMC_outw (dev, RCR_CLEAR, RCR_REG);
+	SMC_outw (dev, TCR_CLEAR, TCR_REG);
+
+	/* set the control register */
+	SMC_SELECT_BANK (dev, 1);
+	SMC_outw (dev, CTL_DEFAULT, CTL_REG);
+
+	/* Reset the MMU */
+	SMC_SELECT_BANK (dev, 2);
+	smc_wait_mmu_release_complete (dev);
+	SMC_outw (dev, MC_RESET, MMU_CMD_REG);
+	while (SMC_inw (dev, MMU_CMD_REG) & MC_BUSY)
+		udelay (1);	/* Wait until not busy */
+
+	/* Note:  It doesn't seem that waiting for the MMU busy is needed here,
+	   but this is a place where future chipsets _COULD_ break.  Be wary
+	   of issuing another MMU command right after this */
+
+	/* Disable all interrupts */
+	SMC_outb (dev, 0, IM_REG);
+}
+
+/*
+ . Function: smc_enable
+ . Purpose: let the chip talk to the outside work
+ . Method:
+ .	1.  Enable the transmitter
+ .	2.  Enable the receiver
+ .	3.  Enable interrupts
+*/
+void smc_enable(struct ether *dev)
+{
+	SMC_SELECT_BANK( dev, 0 );
+	/* see the header file for options in TCR/RCR DEFAULT*/
+	SMC_outw( dev, TCR_DEFAULT, TCR_REG );
+	SMC_outw( dev, RCR_DEFAULT, RCR_REG );
+
+	/* clear MII_DIS */
+  /*	smc_write_phy_register(PHY_CNTL_REG, 0x0000); */
+}
 
