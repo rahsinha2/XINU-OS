@@ -3,6 +3,7 @@
 #include <clock.h>
 #include <ether.h>
 #include <stdio.h>
+
 /*CREDIT*/
 /*
  * Below functions are copies from U-boot smc91111 drivers and altered for xinu on QEMU

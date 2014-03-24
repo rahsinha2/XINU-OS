@@ -15,31 +15,32 @@ devcall etherControl(device *devptr, int req, long arg1, long arg2)
     
     struct netaddr *addr;
     struct ether *ethptr;
-
+    uint8_t *macaddr;
+    int i;
+    
     ethptr = &ethertab[devptr->minor];
-    udev = ethptr->csr;
-    if (udev == NULL)
-    {
-        return SYSERR;
-    }
-
-   
 
     switch (req)
     {
     /* Program MAC address into device. */
     case ETH_CTRL_SET_MAC:
-       
+        
         break;
 
     /* Get MAC address from device. */
     case ETH_CTRL_GET_MAC:
-       
+        macaddr = &arg1;
+        SMC_SELECT_BANK(ethptr, 1);
+        for (i = 0; i < 6; ++i)
+		          macaddr[i] = SMC_inb(ethptr, (ADDR0_REG + i));
         break;
 
     /* Enable or disable loopback mode.  */
     case ETH_CTRL_SET_LOOPBK:
-        
+        printf("\n Seeting device to loop back mode");
+       
+        SMC_SELECT_BANK (ethptr, 0);
+        SMC_outw (ethptr,((bool)arg1 == TRUE) ? TCR_EPH_LOOP : 0 , TCR_REG);
         break;
 
     /* Get link header length. */
@@ -68,8 +69,6 @@ devcall etherControl(device *devptr, int req, long arg1, long arg2)
     default:
         return SYSERR;
     }
-
-    
 
     return OK;
 }
