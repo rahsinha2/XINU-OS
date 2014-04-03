@@ -36,6 +36,34 @@ tty:
 ether:
 	on HARDWARE -i etherInit    -o etherOpen     -c etherClose
 	            -r etherRead    -w etherWrite    -n etherControl
+	            -intr etherInterrupt
+
+/* simple Ethernet loopback device */
+ethloop:
+	on ETHLOOP  -i ethloopInit  -o ethloopOpen   -c ethloopClose
+	            -r ethloopRead  -w ethloopWrite  -n ethloopControl
+
+/* raw sockets */
+raw:
+	on SOFTWARE -i rawInit      -o rawOpen       -c rawClose
+                -r rawRead      -w rawWrite      -n rawControl
+
+/* udp devices */
+udp:
+    on NET      -i udpInit      -o udpOpen       -c udpClose
+                -r udpRead      -w udpWrite      -n udpControl
+
+/* tcp devices */
+tcp:
+    on SOFTWARE -i tcpInit      -o tcpOpen       -c tcpClose
+                -r tcpRead      -g tcpGetc       -w tcpWrite
+                -p tcpPutc      -n tcpControl
+
+/* telnet devices */
+telnet:
+    on TCP      -i telnetInit   -o telnetOpen   -c telnetClose
+                -r telnetRead   -g telnetGetc   -w telnetWrite
+                -p telnetPutc   -n telnetControl
 
 
 %%
@@ -60,7 +88,35 @@ CONSOLE   is tty      on SOFTWARE
 TTYLOOP   is tty      on SOFTWARE
 
 /* Physical ethernet raw packet interface */
-ETH0      is ether    on HARDWARE
+ETH0      is ether    on HARDWARE csr 0x10010000 irq 25
+
+/* A Ethernet Loopback device */
+ELOOP     is ethloop  on ETHLOOP
+
+/* Raw sockets */
+RAW0      is raw      on SOFTWARE
+RAW1      is raw      on SOFTWARE
+
+/* UDP devices */
+UDP0      is udp      on NET
+UDP1      is udp      on NET
+UDP2      is udp      on NET
+UDP3      is udp      on NET
+
+/* TCP devices */
+TCP0      is tcp      on SOFTWARE
+TCP1      is tcp      on SOFTWARE
+TCP2      is tcp      on SOFTWARE
+TCP3      is tcp      on SOFTWARE
+TCP4      is tcp      on SOFTWARE
+TCP5      is tcp      on SOFTWARE
+TCP6      is tcp      on SOFTWARE
+
+/* TELNET */
+TELNET0 is telnet on TCP
+TELNET1 is telnet on TCP
+TELNET2 is telnet on TCP
+
 
 %%
 
@@ -87,3 +143,4 @@ ETH0      is ether    on HARDWARE
 #define POOL_MAX_BUFSIZE 2048   /* max size of a buffer in a pool   */
 #define POOL_MIN_BUFSIZE 8      /* min size of a buffer in a pool   */
 #define POOL_MAX_NBUFS   8192   /* max number of buffers in a pool  */
+#define WITH_DHCPC              /* DHCP client support              */

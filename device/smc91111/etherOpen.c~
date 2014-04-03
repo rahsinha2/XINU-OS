@@ -10,6 +10,7 @@
 #include <ether.h>
 #include <stdlib.h>
 #include <string.h>
+#include <interrupt.h>
 
 
 /* Implementation of etherOpen() for the smsc9512; see the documentation for
@@ -39,8 +40,7 @@ devcall etherOpen(device *devptr)
         goto out_restore;
     }
 
-    /* Create buffer pool for Rx packets (not the actual USB transfers, which
-     * are allocated separately).  */
+    /* Create buffer pool for Rx packets.  */
     ethptr->inPool = bfpalloc(sizeof(struct ethPktBuffer) + ETH_MAX_PKT_LEN,
                               SMC_MAX_RX_REQUESTS);
     if (ethptr->inPool == SYSERR)
@@ -48,17 +48,7 @@ devcall etherOpen(device *devptr)
         goto out_free_out_pool;
     }
 
-    /* We're abusing the csr field to store a pointer to the USB device
-     * structure.  At least it's somewhat equivalent, since it's what we need to
-     * actually communicate with the device hardware.  */
-    //udev = ethptr->csr;
-    
-    /* Soft reset the device */    
-    smc_reset (ethptr);
-    
-    /* Enable the device */
-  	smc_enable (ethptr);
-    
+    smc_init()
     /* Success!  Set the device to ETH_STATE_UP. */
     ethptr->state = ETH_STATE_UP;
     retval = OK;

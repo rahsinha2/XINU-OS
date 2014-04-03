@@ -8,13 +8,25 @@
 #include <ether.h>
 #include <interrupt.h>
 #include <string.h>
-#include <usb_core_driver.h>
+
 
 /* Implementation of etherWrite() for the SMSC LAN9512; see the documentation
  * for this function in ether.h.  */
 devcall etherWrite(device *devptr, const void *buf, uint len)
 {
     struct ether *ethptr;
-   
-    return len;
+    int retLen;
+    
+    ethptr = &ethertab[devptr->minor];
+    if (ethptr->state != ETH_STATE_UP ||
+        len < ETH_HEADER_LEN || len > ETH_HDR_LEN + ETH_MTU)
+    {
+        return SYSERR;
+    }
+
+    /* Get a buffer for the packet.  (This may block.)  */
+    //req = bufget(ethptr->outPool);
+    
+    retLen = smc_send(ethptr, buf, len);
+    return retLen;
 }

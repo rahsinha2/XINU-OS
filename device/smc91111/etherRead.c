@@ -13,5 +13,20 @@
  * this function in ether.h.  */
 devcall etherRead(device *devptr, void *buf, uint len)
 {
+    irqmask im;
+    struct ether *ethptr;
+    struct ethPktBuffer *pkt;
+
+    im = disable();
+
+    /* Make sure device is actually up.  */
+    ethptr = &ethertab[devptr->minor];
+    if (ethptr->state != ETH_STATE_UP)
+    {
+        restore(im);
+        return SYSERR;
+    }
+    
+    
    return len;
 }

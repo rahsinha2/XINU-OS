@@ -12,6 +12,7 @@
 #include <platform.h>
 #include <semaphore.h>
 #include <stdlib.h>
+#include <interrupt.h>
 
 
 /* Global table of Ethernet devices.  */
@@ -43,6 +44,11 @@ devcall etherInit(device *devptr)
     /* Getting MAC address from EPROM on Ethernet Device*/
 	  for (i = 0; i < 6; ++i)
 		  ethptr->devAddress[i] = SMC_inb(ethptr, (ADDR0_REG + i));
+		
+		/* Enable the interrupt for Ethernet device*/  
+		printf("\n Enabling the interrupt at %d",devptr->irq);
+		interruptVector[devptr->irq] = devptr->intr;
+    enable_irq(devptr->irq);
     return OK;
 
 

@@ -40,16 +40,25 @@
 
 void smc_set_mac_addr (const unsigned char *addr);
 
+
 /* I want some simple types */
 
 typedef unsigned char			byte;
 typedef unsigned short			word;
 typedef unsigned long int		dword;
 
-struct smc91111_priv{
-	//u8 dev_num;
-};
+/*struct smc91111_priv{
+	u8 dev_num;
+};*/
 
+/*SMC91111 Base Address*/
+#define CONFIG_SMC91111_BASE	0x10010000
+#undef CONFIG_SMC91111_EXT_PHY
+#define CONFIG_SMC_USE_32_BIT
+
+/*For Buffer pooling*/
+#define SMC_MAX_TX_REQUESTS 1
+#define SMC_MAX_RX_REQUESTS 1
 /*
  . DEBUGGING LEVELS
  .
@@ -66,9 +75,275 @@ struct smc91111_priv{
 
 #define	SMC_IO_EXTENT	16
 
-/*For Buffer pooling*/
-#define SMC_MAX_TX_REQUESTS 1
-#define SMC_MAX_RX_REQUESTS 1
+#ifdef CONFIG_CPU_PXA25X
+
+#ifdef CONFIG_XSENGINE
+#define	SMC_inl(a,r)	(*((volatile dword *)((a)->iobase+((r)<<1))))
+#define	SMC_inw(a,r)	(*((volatile word *)((a)->iobase+((r)<<1))))
+#define SMC_inb(a,p)  ({ \
+	unsigned int __p = (unsigned int)((a)->iobase + ((p)<<1)); \
+	unsigned int __v = *(volatile unsigned short *)((__p) & ~2); \
+	if (__p & 2) __v >>= 8; \
+	else __v &= 0xff; \
+	__v; })
+#elif defined(CONFIG_XAENIAX)
+#define SMC_inl(a,r)	(*((volatile dword *)((a)->iobase+(r))))
+#define SMC_inw(a,z)	({ \
+	unsigned int __p = (unsigned int)((a)->iobase + (z)); \
+	unsigned int __v = *(volatile unsigned int *)((__p) & ~3); \
+	if (__p & 3) __v >>= 16; \
+	else __v &= 0xffff; \
+	__v; })
+#define SMC_inb(a,p)	({ \
+	unsigned int ___v = SMC_inw((a),(p) & ~1); \
+	if ((p) & 1) ___v >>= 8; \
+	else ___v &= 0xff; \
+	___v; })
+#else
+#define	SMC_inl(a,r)	(*((volatile dword *)((a)->iobase+(r))))
+#define	SMC_inw(a,r)	(*((volatile word *)((a)->iobase+(r))))
+#define SMC_inb(a,p)	({ \
+	unsigned int __p = (unsigned int)((a)->iobase + (p)); \
+	unsigned int __v = *(volatile unsigned short *)((__p) & ~1); \
+	if (__p & 1) __v >>= 8; \
+	else __v &= 0xff; \
+	__v; })
+#endif
+
+#ifdef CONFIG_XSENGINE
+#define	SMC_outl(a,d,r)	(*((volatile dword *)((a)->iobase+(r<<1))) = d)
+#define	SMC_outw(a,d,r)	(*((volatile word *)((a)->iobase+(r<<1))) = d)
+#elif defined (CONFIG_XAENIAX)
+#define SMC_outl(a,d,r)	(*((volatile dword *)((a)->iobase+(r))) = d)
+#define SMC_outw(a,d,p)	({ \
+	dword __dwo = SMC_inl((a),(p) & ~3); \
+	dword __dwn = (word)(d); \
+	__dwo &= ((p) & 3) ? 0x0000ffff : 0xffff0000; \
+	__dwo |= ((p) & 3) ? __dwn << 16 : __dwn; \
+	SMC_outl((a), __dwo, (p) & ~3); \
+})
+#else
+#define	SMC_outl(a,d,r)	(*((volatile dword *)((a)->iobase+(r))) = d)
+#define	SMC_outw(a,d,r)	(*((volatile word *)((a)->iobase+(r))) = d)
+#endif
+
+#define	SMC_outb(a,d,r)	({	word __d = (byte)(d);  \
+				word __w = SMC_inw((a),(r)&~1);  \
+				__w &= ((r)&1) ? 0x00FF : 0xFF00;  \
+				__w |= ((r)&1) ? __d<<8 : __d;  \
+				SMC_outw((a),__w,(r)&~1);  \
+			})
+
+#define SMC_outsl(a,r,b,l)	({	int __i; \
+					dword *__b2; \
+					__b2 = (dword *) b; \
+					for (__i = 0; __i < l; __i++) { \
+					    SMC_outl((a), *(__b2 + __i), r); \
+					} \
+				})
+
+#define SMC_outsw(a,r,b,l)	({	int __i; \
+					word *__b2; \
+					__b2 = (word *) b; \
+					for (__i = 0; __i < l; __i++) { \
+					    SMC_outw((a), *(__b2 + __i), r); \
+					} \
+				})
+
+#define SMC_insl(a,r,b,l)	({	int __i ;  \
+					dword *__b2;  \
+					__b2 = (dword *) b;  \
+					for (__i = 0; __i < l; __i++) {  \
+					  *(__b2 + __i) = SMC_inl((a),(r));  \
+					  SMC_inl((a),0);  \
+					};  \
+				})
+
+#define SMC_insw(a,r,b,l)		({	int __i ;  \
+					word *__b2;  \
+					__b2 = (word *) b;  \
+					for (__i = 0; __i < l; __i++) {  \
+					  *(__b2 + __i) = SMC_inw((a),(r));  \
+					  SMC_inw((a),0);  \
+					};  \
+				})
+
+#define SMC_insb(a,r,b,l)	({	int __i ;  \
+					byte *__b2;  \
+					__b2 = (byte *) b;  \
+					for (__i = 0; __i < l; __i++) {  \
+					  *(__b2 + __i) = SMC_inb((a),(r));  \
+					  SMC_inb((a),0);  \
+					};  \
+				})
+
+#elif defined(CONFIG_LEON)	/* if not CONFIG_CPU_PXA25X */
+
+#define SMC_LEON_SWAP16(_x_) ({ word _x = (_x_); ((_x << 8) | (_x >> 8)); })
+
+#define SMC_LEON_SWAP32(_x_)			\
+    ({ dword _x = (_x_);			\
+       ((_x << 24) |				\
+       ((0x0000FF00UL & _x) <<  8) |		\
+       ((0x00FF0000UL & _x) >>  8) |		\
+       (_x  >> 24)); })
+
+#define	SMC_inl(a,r)	(SMC_LEON_SWAP32((*(volatile dword *)((a)->iobase+((r)<<0)))))
+#define	SMC_inl_nosw(a,r)	((*(volatile dword *)((a)->iobase+((r)<<0))))
+#define	SMC_inw(a,r)	(SMC_LEON_SWAP16((*(volatile word *)((a)->iobase+((r)<<0)))))
+#define	SMC_inw_nosw(a,r)	((*(volatile word *)((a)->iobase+((r)<<0))))
+#define SMC_inb(a,p)	({ \
+	word ___v = SMC_inw((a),(p) & ~1); \
+	if ((p) & 1) ___v >>= 8; \
+	else ___v &= 0xff; \
+	___v; })
+
+#define	SMC_outl(a,d,r)	(*(volatile dword *)((a)->iobase+((r)<<0))=SMC_LEON_SWAP32(d))
+#define	SMC_outl_nosw(a,d,r)	(*(volatile dword *)((a)->iobase+((r)<<0))=(d))
+#define	SMC_outw(a,d,r)	(*(volatile word *)((a)->iobase+((r)<<0))=SMC_LEON_SWAP16(d))
+#define	SMC_outw_nosw(a,d,r)	(*(volatile word *)((a)->iobase+((r)<<0))=(d))
+#define	SMC_outb(a,d,r)	do{	word __d = (byte)(d);  \
+				word __w = SMC_inw((a),(r)&~1);  \
+				__w &= ((r)&1) ? 0x00FF : 0xFF00;  \
+				__w |= ((r)&1) ? __d<<8 : __d;  \
+				SMC_outw((a),__w,(r)&~1);  \
+			}while(0)
+#define SMC_outsl(a,r,b,l)	do{	int __i; \
+					dword *__b2; \
+					__b2 = (dword *) b; \
+					for (__i = 0; __i < l; __i++) { \
+					    SMC_outl_nosw((a), *(__b2 + __i), r); \
+					} \
+				}while(0)
+#define SMC_outsw(a,r,b,l)	do{	int __i; \
+					word *__b2; \
+					__b2 = (word *) b; \
+					for (__i = 0; __i < l; __i++) { \
+					    SMC_outw_nosw((a), *(__b2 + __i), r); \
+					} \
+				}while(0)
+#define SMC_insl(a,r,b,l)	do{	int __i ;  \
+					dword *__b2;  \
+					__b2 = (dword *) b;  \
+					for (__i = 0; __i < l; __i++) {  \
+					  *(__b2 + __i) = SMC_inl_nosw((a),(r));  \
+					};  \
+				}while(0)
+
+#define SMC_insw(a,r,b,l)		do{	int __i ;  \
+					word *__b2;  \
+					__b2 = (word *) b;  \
+					for (__i = 0; __i < l; __i++) {  \
+					  *(__b2 + __i) = SMC_inw_nosw((a),(r));  \
+					};  \
+				}while(0)
+
+#define SMC_insb(a,r,b,l)		do{	int __i ;  \
+					byte *__b2;  \
+					__b2 = (byte *) b;  \
+					for (__i = 0; __i < l; __i++) {  \
+					  *(__b2 + __i) = SMC_inb((a),(r));  \
+					};  \
+				}while(0)
+
+#else			/* if not CONFIG_CPU_PXA25X and not CONFIG_LEON */
+
+#ifndef CONFIG_SMC_USE_IOFUNCS /* these macros don't work on some boards */
+/*
+ * We have only 16 Bit PCMCIA access on Socket 0
+ */
+
+#ifdef CONFIG_ADNPESC1
+#define	SMC_inw(a,r)	(*((volatile word *)((a)->iobase+((r)<<1))))
+#elif CONFIG_BLACKFIN
+#define	SMC_inw(a,r)	({ word __v = (*((volatile word *)((a)->iobase+(r)))); SSYNC(); __v;})
+#elif CONFIG_ARM64
+#define	SMC_inw(a, r)	(*((volatile word*)((a)->iobase+((dword)(r)))))
+#else
+#define SMC_inw(a, r)	(*((volatile word*)((a)->iobase+(r))))
+#endif
+#define  SMC_inb(a,r)	(((r)&1) ? SMC_inw((a),(r)&~1)>>8 : SMC_inw((a),(r)&0xFF))
+
+#ifdef CONFIG_ADNPESC1
+#define	SMC_outw(a,d,r)	(*((volatile word *)((a)->iobase+((r)<<1))) = d)
+#elif CONFIG_BLACKFIN
+#define	SMC_outw(a, d, r)	\
+			({	(*((volatile word*)((a)->iobase+((r)))) = d); \
+				SSYNC(); \
+			})
+#elif CONFIG_ARM64
+#define	SMC_outw(a, d, r)	\
+			(*((volatile word*)((a)->iobase+((dword)(r)))) = d)
+#else
+#define	SMC_outw(a, d, r)	\
+			(*((volatile word*)((a)->iobase+(r))) = d)
+#endif
+#define	SMC_outb(a,d,r)	({	word __d = (byte)(d);  \
+				word __w = SMC_inw((a),(r)&~1);  \
+				__w &= ((r)&1) ? 0x00FF : 0xFF00;  \
+				__w |= ((r)&1) ? __d<<8 : __d;  \
+				SMC_outw((a),__w,(r)&~1);  \
+			})
+#if 0
+#define	SMC_outsw(a,r,b,l)	outsw((a)->iobase+(r), (b), (l))
+#else
+#define SMC_outsw(a,r,b,l)	({	int __i; \
+					word *__b2; \
+					__b2 = (word *) b; \
+					for (__i = 0; __i < l; __i++) { \
+					    SMC_outw((a), *(__b2 + __i), r); \
+					} \
+				})
+#endif
+
+#if 0
+#define	SMC_insw(a,r,b,l)	insw((a)->iobase+(r), (b), (l))
+#else
+#define SMC_insw(a,r,b,l)	({	int __i ;  \
+					word *__b2;  \
+					__b2 = (word *) b;  \
+					for (__i = 0; __i < l; __i++) {  \
+					  *(__b2 + __i) = SMC_inw((a),(r));  \
+					  SMC_inw((a),0);  \
+					};  \
+				})
+#endif
+
+#endif  /* CONFIG_SMC_USE_IOFUNCS */
+
+#if defined(CONFIG_SMC_USE_32_BIT)
+
+#ifdef CONFIG_XSENGINE
+#define	SMC_inl(a,r)	(*((volatile dword *)((a)->iobase+(r<<1))))
+#else
+#define	SMC_inl(a,r)	(*((volatile dword *)((a)->iobase+(r))))
+#endif
+
+#define SMC_insl(a,r,b,l)	({	int __i ;  \
+					dword *__b2;  \
+					__b2 = (dword *) b;  \
+					for (__i = 0; __i < l; __i++) {  \
+					  *(__b2 + __i) = SMC_inl((a),(r));  \
+					  SMC_inl((a),0);  \
+					};  \
+				})
+
+#ifdef CONFIG_XSENGINE
+#define	SMC_outl(a,d,r)	(*((volatile dword *)((a)->iobase+(r<<1))) = d)
+#else
+#define	SMC_outl(a,d,r)	(*((volatile dword *)((a)->iobase+(r))) = d)
+#endif
+#define SMC_outsl(a,r,b,l)	({	int __i; \
+					dword *__b2; \
+					__b2 = (dword *) b; \
+					for (__i = 0; __i < l; __i++) { \
+					    SMC_outl((a), *(__b2 + __i), r); \
+					} \
+				})
+
+#endif /* CONFIG_SMC_USE_32_BIT */
+
+#endif
 
 /*---------------------------------------------------------------
  .
@@ -171,12 +446,22 @@ struct smc91111_priv{
 #define RPC_LED_100	(0x05)	/* LED = 100Mbps link dectect */
 #define RPC_LED_TX	(0x06)	/* LED = TX packet occurred */
 #define RPC_LED_RX	(0x07)	/* LED = RX packet occurred */
-
+#if defined(CONFIG_DK1C20) || defined(CONFIG_DK1S10)
+/* buggy schematic: LEDa -> yellow, LEDb --> green */
+#define RPC_DEFAULT	( RPC_SPEED | RPC_DPLX | RPC_ANEG	\
+			| (RPC_LED_TX_RX << RPC_LSXA_SHFT)	\
+			| (RPC_LED_100_10 << RPC_LSXB_SHFT)	)
+#elif defined(CONFIG_ADNPESC1)
+/* SSV ADNP/ESC1 has only one LED: LEDa -> Rx/Tx indicator */
+#define RPC_DEFAULT	( RPC_SPEED | RPC_DPLX | RPC_ANEG	\
+			| (RPC_LED_TX_RX << RPC_LSXA_SHFT)	\
+			| (RPC_LED_100_10 << RPC_LSXB_SHFT)	)
+#else
 /* SMSC reference design: LEDa --> green, LEDb --> yellow */
 #define RPC_DEFAULT	( RPC_SPEED | RPC_DPLX | RPC_ANEG	\
 			| (RPC_LED_100_10 << RPC_LSXA_SHFT)	\
 			| (RPC_LED_TX_RX << RPC_LSXB_SHFT)	)
-
+#endif
 
 /* Bank 0 0x000C is reserved */
 
@@ -510,96 +795,54 @@ enum {
 #define SMC_INTERRUPT_MASK   (IM_EPH_INT | IM_RX_OVRN_INT | IM_RCV_INT | \
 	IM_MDINT)
 
-
-/*SMC91111 Base Address*/
-#define CONFIG_SMC91111_BASE	0x10010000
-
-
-static inline word SMC_inw(struct ether *dev, dword offset)
-{
-	word v;
-	v = *((volatile word*)(dev->iobase + offset));
-	*(volatile uint32_t*)(0xc0000000);
-	return v;
-}
-
-static inline void SMC_outw(struct ether *dev, word value, dword offset)
-{
-	*((volatile word*)(dev->iobase + offset)) = value;
-	*(volatile uint32_t*)(0xc0000000);
-}
-
-static inline byte SMC_inb(struct ether *dev, dword offset)
-{
-	word  _w;
-
-	_w = SMC_inw(dev, offset & ~((dword)1));
-	return (offset & 1) ? (byte)(_w >> 8) : (byte)(_w);
-}
-
-static inline void SMC_outb(struct ether *dev, byte value, dword offset)
-{
-	word  _w;
-
-	_w = SMC_inw(dev, offset & ~((dword)1));
-	if (offset & 1)
-		*((volatile word*)(dev->iobase + (offset & ~((dword)1)))) =
-			(value<<8) | (_w & 0x00ff);
-	else
-		*((volatile word*)(dev->iobase + offset)) =
-			value | (_w & 0xff00);
-}
-
-static inline void SMC_insw(struct ether *dev, dword offset,
-	volatile uchar* buf, dword len)
-{
-	volatile word *p = (volatile word *)buf;
-
-	while (len-- > 0) {
-		*p++ = SMC_inw(dev, offset);
-		*((volatile uint32_t*)(0xc0000000));
-	}
-}
-
-static inline void SMC_outsw(struct ether *dev, dword offset,
-	uchar* buf, dword len)
-{
-	volatile word *p = (volatile word *)buf;
-
-	while (len-- > 0) {
-		SMC_outw(dev, *p++, offset);
-		*(volatile uint32_t*)(0xc0000000);
-	}
-}
+/*
+ * Open and Initialize the board
+ *
+ * Set up everything, reset the card, etc ..
+ *
+ */
+ int smc_init(struct ether *dev);
 
 /*
- . Function: smc_reset( void )
+ . Function:  smc_send(struct net_device * )
  . Purpose:
- .	This sets the SMC91111 chip to its normal state, hopefully from whatever
- .	mess that any other DOS driver has put it in.
+ .	This sends the actual packet to the SMC9xxx chip.
  .
- . Maybe I should reset more registers to defaults in here?  SOFTRST  should
- . do that for me.
- .
- . Method:
- .	1.  send a SOFT RESET
- .	2.  wait for it to finish
- .	3.  enable autorelease mode
- .	4.  reset the memory management unit
- .	5.  clear all interrupts
- .
+ . Algorithm:
+ .	First, see if a saved_skb is available.
+ .		( this should NOT be called if there is no 'saved_skb'
+ .	Now, find the packet number that the chip allocated
+ .	Point the data pointers at it in memory
+ .	Set the length word in the chip's memory
+ .	Dump the packet to chip memory
+ .	Check if a last byte is needed ( odd length packet )
+ .		if so, set the control flag right
+ .	Tell the card to send it
+ .	Enable the transmit interrupt, so I know if it failed
+ .	Free the kernel data if I actually sent it.
 */
-void smc_reset (struct ether *dev);
+int smc_send(struct ether *dev, void *packet, int packet_length);
+
+
+/*------------------------------------------------------------
+ . Writes a register to the MII Management serial interface
+ .-------------------------------------------------------------*/
+void smc_write_phy_register (struct ether *dev, byte phyreg,
+	word phydata);
+	
+/*------------------------------------------------------------
+ . Reads a register from the MII Management serial interface
+ .-------------------------------------------------------------*/
+word smc_read_phy_register (struct ether *dev, byte phyreg);
+
+/*------------------------------------------------------------
+ . Modify a bit in the LAN91C111 register set
+ .-------------------------------------------------------------*/
+word smc_modify_regbit(struct ether *dev, int bank, int reg,
+	unsigned int bit, int val);
 
 /*
- . Function: smc_enable
- . Purpose: let the chip talk to the outside work
- . Method:
- .	1.  Enable the transmitter
- .	2.  Enable the receiver
- .	3.  Enable interrupts
-*/
-
-void smc_enable(struct ether *dev);
-
+ . Reads a MAC address from EPROM
+*/	
+	int smc_read_hwaddr(struct ether *dev, uchar *macaddr);
 #endif  /* _SMC_91111_H_ */
