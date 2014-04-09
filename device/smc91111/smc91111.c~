@@ -354,9 +354,14 @@ static void smc_enable(struct ether *dev)
 {
 	PRINTK2("%s: smc_enable\n", SMC_DEV_NAME);
 	SMC_SELECT_BANK( dev, 0 );
+	
 	/* see the header file for options in TCR/RCR DEFAULT*/
 	SMC_outw( dev, TCR_DEFAULT, TCR_REG );
 	SMC_outw( dev, RCR_DEFAULT, RCR_REG );
+	
+	/* enable interrupt*/
+  SMC_SELECT_BANK( dev, 2 );
+	SMC_outb( dev, SMC_INTERRUPT_MASK, IM_REG);
 
 	/* clear MII_DIS */
 /*	smc_write_phy_register(PHY_CNTL_REG, 0x0000); */
@@ -423,11 +428,30 @@ int smc_send(struct ether *dev, void *packet, int packet_length)
 	byte saved_pnr;
 	word saved_ptr;
 
+  // MMU reset
+  /*SMC_SELECT_BANK (dev, 2);
+	smc_wait_mmu_release_complete (dev);
+	SMC_outw (dev, MC_RESET, MMU_CMD_REG);
+	while (SMC_inw (dev, MMU_CMD_REG) & MC_BUSY)
+		udelay (1); */
+  
+  // Print intterupt Mask
+  SMC_SELECT_BANK (dev, 2);
+  kprintf("\n MASK IM_RCV_INT : %d", ((SMC_inw (dev, IM_REG) & IM_RCV_INT))?1:0);
+  kprintf("\n MASK IM_ALLOC_INT : %d", ((SMC_inw (dev, IM_REG) & IM_ALLOC_INT))?1:0);
+  kprintf("\n MASK IM_TX_EMPTY_INT : %d", ((SMC_inw (dev, IM_REG) & IM_TX_EMPTY_INT))?1:0);
+  kprintf("\n MASK IM_TX_INT : %d", ((SMC_inw (dev, IM_REG) & IM_TX_INT))?1:0);
+    
+  kprintf("\n INT IM_RCV_INT : %d", ((SMC_inw (dev, SMC91111_INT_REG) & IM_RCV_INT))?1:0);
+  kprintf("\n INT IM_ALLOC_INT : %d", ((SMC_inw (dev, SMC91111_INT_REG) & IM_ALLOC_INT))?1:0);
+  kprintf("\n INT IM_TX_EMPTY_INT : %d\n", ((SMC_inw (dev, SMC91111_INT_REG) & IM_TX_EMPTY_INT))?1:0);
+  kprintf("\n INT IM_TX_INT : %d", ((SMC_inw (dev, SMC91111_INT_REG) & IM_TX_INT))?1:0);
+  
 	/* save PTR and PNR registers before manipulation */
 	SMC_SELECT_BANK (dev, 2);
 	saved_pnr = SMC_inb( dev, PN_REG );
 	saved_ptr = SMC_inw( dev, PTR_REG );
-
+	
 	PRINTK3 ("%s: smc_hardware_send_packet\n", SMC_DEV_NAME);
 
 	length = ETH_ZLEN < packet_length ? packet_length : ETH_ZLEN;
@@ -455,6 +479,7 @@ int smc_send(struct ether *dev, void *packet, int packet_length)
 	/* now, try to allocate the memory */
 	SMC_SELECT_BANK (dev, 2);
 	SMC_outw (dev, MC_ALLOC | numPages, MMU_CMD_REG);
+
 
 	/* FIXME: the ALLOC_INT bit never gets set *
 	 * so the following will always give a	   *
@@ -619,9 +644,13 @@ again:
 		}
 
 		PRINTK2 ("MMU ready\n");
-
-
-	}
+  }
+  
+  if (poll4int(dev, IM_RCV_INT, SMC_TX_TIMEOUT)) {
+      PRINTK2 ("%s: Packet not recieved  \n", SMC_DEV_NAME);  
+  }else{
+      PRINTK2 ("%s: Packet recieved  \n", SMC_DEV_NAME);
+  }
 
 	/* restore previously saved registers */
 #ifndef CONFIG_XAENIAX
@@ -635,12 +664,6 @@ again:
 #endif
 	SMC_outw( dev, saved_ptr, PTR_REG );
 	
-	if (poll4int(dev, IM_RCV_INT, SMC_TX_TIMEOUT)) {
-      PRINTK2 ("%s: Packet not recieved  \n", SMC_DEV_NAME);  
-  }else{
-      PRINTK2 ("%s: Packet recieved  \n", SMC_DEV_NAME);
-  }
-
 	return length;
 }
 
@@ -701,6 +724,9 @@ int smc_read_hwaddr(struct ether *dev, uchar *macaddr)
 	smc_phy_configure (dev);
 #endif
 
+  /* Go this thing from Linux driver*/
+	smc_enable (dev);
+	
 	/* conservative setting (10Mbps, HalfDuplex, no AutoNeg.) */
 /*	SMC_SELECT_BANK(dev, 0); */
 /*	SMC_outw(dev, 0, RPC_REG); */
@@ -844,15 +870,14 @@ int smc_rcv(struct ether *dev)
 }
 #endif /*0*/
 
-#if 0
+
 /*------------------------------------------------------------
  . Modify a bit in the LAN91C111 register set
  .-------------------------------------------------------------*/
-static word smc_modify_regbit(struct ether *dev, int bank, int ioaddr, int reg,
-	unsigned int bit, int val)
+word smc_modify_regbit(struct ether *dev, int bank, int ioaddr, int reg, unsigned int bit, int val)
 {
 	word regval;
-
+  
 	SMC_SELECT_BANK( dev, bank );
 
 	regval = SMC_inw( dev, reg );
@@ -865,7 +890,7 @@ static word smc_modify_regbit(struct ether *dev, int bank, int ioaddr, int reg,
 	return(regval);
 }
 
-
+#if 0
 /*------------------------------------------------------------
  . Retrieve a bit in the LAN91C111 register set
  .-------------------------------------------------------------*/

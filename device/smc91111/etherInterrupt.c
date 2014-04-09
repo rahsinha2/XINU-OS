@@ -9,6 +9,7 @@
 #include <ether.h>
 #include <string.h>
 #include <stdio.h>
+#include <kernel.h>
 
 /**
  * @ingroup etherspecific
@@ -25,7 +26,7 @@ interrupt etherInterrupt(void)
   
     ethptr = &ethertab[0];   /*Default ethernet driver*/
     
-    printf("\n SMC91111: Interrrupt Generated ");  
+    kprintf("\n SMC91111: Interrrupt Generated ");  
     if(!ethptr)
     {
       return 0;
@@ -42,31 +43,31 @@ again:
 
 	  if(status & IM_RCV_INT)
 	  {
-	    printf("\n SMC91111: Receive Interrupt");
+	    kprintf("\n SMC91111: Receive Interrupt");
 	    SMC_outb (ethptr, IM_RCV_INT, SMC91111_INT_REG);
 	    goto again;
 	  }
 	  else if(status & IM_TX_INT)
 	  {
-	    printf("\n SMC91111: Transmit Interrupt");
+	    kprintf("\n SMC91111: Transmit Interrupt");
 	    SMC_outb (ethptr, IM_TX_INT, SMC91111_INT_REG);
 	    goto again;
 	  }
 	  else if(status & IM_ALLOC_INT)
 	  {
-	    printf("\n SMC91111: Allocation interrupt");
+	    kprintf("\n SMC91111: Allocation interrupt");
 	    SMC_outb (ethptr, IM_ALLOC_INT, SMC91111_INT_REG);
 	    goto again;
 	  }
 	  else if(status & IM_EPH_INT)
 	  {
-	    printf("\n SMC91111: Ethernet Protocol Handler Interrupt");
+	    kprintf("\n SMC91111: Ethernet Protocol Handler Interrupt");
 	    SMC_outb (ethptr, IM_EPH_INT, SMC91111_INT_REG);
 	    goto again;	    
 	  }
 	  else if(status & IM_RX_OVRN_INT)
 	  {
-	    printf("\n SMC91111: Receiver Overrun interrupt ");
+	    kprintf("\n SMC91111: Receiver Overrun interrupt ");
 	    SMC_outb (ethptr, IM_RX_OVRN_INT, SMC91111_INT_REG);
 	    goto again;	    
 	  }

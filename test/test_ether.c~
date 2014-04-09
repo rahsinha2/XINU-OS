@@ -173,7 +173,7 @@ static int ethn_test(bool verbose, int devminor)
     testPrint(verbose, str);
     subpass = TRUE;
 
-    /*for (i = 0; i < 512; i++)
+    for (i = 0; i < 512; i++)
     {
         len = 32 + (rand() % 1200);
         value = write(dev, outpkt, len);
@@ -188,7 +188,7 @@ static int ethn_test(bool verbose, int devminor)
         {
             subpass = FALSE;
         }
-    }*/
+    }
     failif((TRUE != subpass), "");
 
     /* ether out of loopback mode */

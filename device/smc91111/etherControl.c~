@@ -28,27 +28,14 @@ devcall etherControl(device *devptr, int req, long arg1, long arg2)
 
     /* Get MAC address from device. */
     case ETH_CTRL_GET_MAC:
-        /*macaddr =  (char *)&arg1;
-        printf("MAC : ");
-        SMC_SELECT_BANK(ethptr, 1);
-        for (i = 0; i < 6; ++i){
-            macaddr[i] = SMC_inb(ethptr, (ADDR0_REG + i));
-            printf("%02X:",macaddr[i]);
-		    }*/
-		    smc_read_hwaddr(ethptr, (uchar*)arg1);   
+        smc_read_hwaddr(ethptr, (uchar*)arg1);   
         break;
 
     /* Enable or disable loopback mode.  */
     case ETH_CTRL_SET_LOOPBK:
         printf("\n Loop back mode: %d", ((bool)arg1 == TRUE) ? 1 : 0);
-        regContent = smc_read_phy_register(ethptr, PHY_CNTL_REG);
+        smc_modify_regbit(ethptr, 0, CONFIG_SMC91111_BASE, TCR_REG, TCR_EPH_LOOP,((bool)arg1 == TRUE) ? 1 : 0);
         
-        if((bool)arg1 == TRUE) 
-           regContent|=PHY_CNTL_LPBK; 
-        else
-           regContent&= ~(PHY_CNTL_LPBK);
-           
-        smc_write_phy_register(ethptr, PHY_CNTL_REG, regContent); 
         break;
 
     /* Get link header length. */

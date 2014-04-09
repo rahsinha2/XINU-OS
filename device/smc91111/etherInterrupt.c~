@@ -25,7 +25,7 @@ interrupt etherInterrupt(void)
   
     ethptr = &ethertab[0];   /*Default ethernet driver*/
     
-    printf("\n SMC91111: Interrrupt Generated");  
+    printf("\n SMC91111: Interrrupt Generated ");  
     if(!ethptr)
     {
       return 0;

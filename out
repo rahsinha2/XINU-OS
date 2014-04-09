@@ -1,0 +1,29 @@
+Binary file ./.git/index matches
+./system/platforms/arm-rpi/usb_dwc_hcd.c: * starting a new kernel directly in software with kexec()).
+./system/platforms/arm-rpi/Makerules:          kexec.c            \
+./system/platforms/arm-rpi/kexec.c: * @file kexec.c
+./system/platforms/arm-rpi/kexec.c:#include <kexec.h>
+./system/platforms/arm-rpi/kexec.c:syscall kexec(const void *kernel, uint size)
+./include/shell.h:shellcmd xsh_kexec(int, char *[]);
+./include/kexec.h: * @file kexec.h
+./include/kexec.h:syscall kexec(const void *kernel, uint size);
+./shell/xsh_kexec.c: * @file xsh_kexec.c
+./shell/xsh_kexec.c:#include <kexec.h>
+./shell/xsh_kexec.c:static void kexec_from_network(int netdev);
+./shell/xsh_kexec.c:static void kexec_from_uart(int uartdev);
+./shell/xsh_kexec.c:shellcmd xsh_kexec(int nargs, char *args[])
+./shell/xsh_kexec.c:        kexec_from_network(dev);
+./shell/xsh_kexec.c:        kexec_from_uart(dev);
+./shell/xsh_kexec.c:static void kexec_from_network(int netdev)
+./shell/xsh_kexec.c:    kexec(kernel, size);
+./shell/xsh_kexec.c:    fprintf(stderr, "ERROR: kexec() returned!\n");
+./shell/xsh_kexec.c:static void kexec_from_uart(int uartdev)
+./shell/xsh_kexec.c:    kexec(kernel, size);
+./shell/xsh_kexec.c:    fprintf(stderr, "ERROR: kexec from UART not supported on this platform.\n");
+./shell/xsh_kexec.d:../shell/xsh_kexec.o: ../shell/xsh_kexec.c ../include/conf.h \
+./shell/xsh_kexec.d: ../include/stddef.h ../include/device.h ../include/kexec.h \
+./shell/xsh_kexec.d:../include/kexec.h:
+./shell/Makerules:C_FILES += xsh_kexec.c
+./shell/shell.c:    {"kexec", FALSE, xsh_kexec},
+Binary file ./shell/shell.o matches
+Binary file ./shell/xsh_kexec.o matches

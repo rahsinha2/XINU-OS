@@ -34,14 +34,7 @@ devcall etherControl(device *devptr, int req, long arg1, long arg2)
     /* Enable or disable loopback mode.  */
     case ETH_CTRL_SET_LOOPBK:
         printf("\n Loop back mode: %d", ((bool)arg1 == TRUE) ? 1 : 0);
-        regContent = smc_read_phy_register(ethptr, PHY_CNTL_REG);
-        
-        if((bool)arg1 == TRUE) 
-           regContent|=PHY_CNTL_LPBK; 
-        else
-           regContent&= ~(PHY_CNTL_LPBK);
-           
-        smc_write_phy_register(ethptr, PHY_CNTL_REG, regContent); 
+        smc_modify_regbit(ethptr, 0, CONFIG_SMC91111_BASE, TCR_REG, TCR_EPH_LOOP,((bool)arg1 == TRUE) ? 1 : 0);
         break;
 
     /* Get link header length. */

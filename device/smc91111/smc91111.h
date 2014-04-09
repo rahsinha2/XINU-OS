@@ -795,6 +795,7 @@ enum {
 #define SMC_INTERRUPT_MASK   (IM_EPH_INT | IM_RX_OVRN_INT | IM_RCV_INT | \
 	IM_MDINT)
 
+
 /*
  * Open and Initialize the board
  *
@@ -838,7 +839,7 @@ word smc_read_phy_register (struct ether *dev, byte phyreg);
 /*------------------------------------------------------------
  . Modify a bit in the LAN91C111 register set
  .-------------------------------------------------------------*/
-word smc_modify_regbit(struct ether *dev, int bank, int reg,
+word smc_modify_regbit(struct ether *dev, int bank, int ioaddr, int reg,
 	unsigned int bit, int val);
 
 /*
