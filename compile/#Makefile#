@@ -353,7 +353,7 @@ confclean:
 	@echo -e "\tCleaning configuration"
 	$(MAKE) -C config/ clean
 
-realclean: clean libclean confclean $(PLATCLEAN)
+xclearealclean: clean libclean confclean $(PLATCLEAN)
 	@echo -e "\tCleaning EVERYTHING"
 	rm -f ../include/conf.h
 	rm -f ../system/conf.c
