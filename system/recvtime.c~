@@ -27,7 +27,7 @@ message recvtime(int maxwait)
     {
         return SYSERR;
     }
-
+    kprintf("sleeping thread id: %d ",thrcurrent);
     
     im = disable();
     thrptr = &thrtab[thrcurrent];
@@ -49,10 +49,12 @@ message recvtime(int maxwait)
     if (thrptr->hasmsg == TRUE)
     {
         msg = thrptr->msg;      /* retrieve message              */
+        kprintf("Recieved msg : %d",msg);
         thrptr->hasmsg = FALSE; /* reset message flag            */
     }
     else
     {
+        kprintf("Recieved msg : time out");
         msg = TIMEOUT;
     }
     restore(im);

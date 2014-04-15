@@ -30,7 +30,9 @@
 #include <vlan.h>
 
 /* ETH Buffer lengths */
-#define ETH_IBLEN           1024 /**< input buffer size                 */
+//#define ETH_IBLEN        1024 /**< input buffer size                 */
+#define ETH_IBLEN          4 /**< input buffer size                 */
+/*TODO: QUESTION: why ETH_IBLEN was 1024 ?? If my bufferpool size doesnt support that ??*/
 
 /* Ethernet DMA buffer sizes */
 #define ETH_MTU             1500 /**< Maximum transmission units        */

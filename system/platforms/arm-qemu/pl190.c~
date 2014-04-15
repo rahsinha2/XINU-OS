@@ -73,7 +73,14 @@ interrupt_handler_t interruptVector[32];
 void enable_irq(irqmask irq)
 {
     regs->VICINTENABLE = 1U << irq;
-    sic->SIC_PICENSET = 1U << irq;
+    
+    /* Enable SIC_PICENABLE bit for external peripheral irq so that i can get interrupt on PIC*/
+    /*TODO: Is it right place to implement this ?? */
+    
+    if((irq >=25 && irq <= 28) || (irq == 32))
+    {
+      sic->SIC_PICENSET = 1U << irq;
+    }
 }
 
 /**

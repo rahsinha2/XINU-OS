@@ -47,14 +47,10 @@ devcall etherInit(device *devptr)
 		  ethptr->devAddress[i] = SMC_inb(ethptr, (ADDR0_REG + i));
 		
 		/* Enable the interrupt for Ethernet device*/  
-		printf("\n Enabling the interrupt at %d \n",devptr->irq);
 		interruptVector[devptr->irq] = devptr->intr;
     enable_irq(devptr->irq);
+    
     return OK;
-
-
-err_free_isema:
-    semfree(ethptr->isema);
 err:
     return SYSERR;
 }

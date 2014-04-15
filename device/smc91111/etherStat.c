@@ -36,8 +36,8 @@ void etherStat(ushort minor)
     printf("  Rx packets in queue   %u\n",   ethptr->icount);
     printf("  Rx errors             %lu\n",  ethptr->errors);
     printf("  Rx overruns           %u\n",   ethptr->ovrrun);
-    printf("  Rx USB transfers done %lu\n",  ethptr->rxirq);
-    printf("  Tx USB transfers done %lu\n",  ethptr->txirq);
+    printf("  Rx packet recieved    %lu\n",  ethptr->rxirq);
+    printf("  Tx packet sent        %lu\n",  ethptr->txirq);
 }
 
 void etherThroughput(ushort minor)

@@ -14,7 +14,6 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <compiler.h>
-#include <kernel.h>
 
 /* Kernel function prototypes */
 void nulluser(void);

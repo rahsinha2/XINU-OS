@@ -29,6 +29,11 @@ syscall arpNotify(struct arpEntry *entry, message msg)
         return SYSERR;
     }
 
+    for (i = 0; i < entry->count; i++)
+    {
+       kprintf("\n Sending message %d to thread id %d",msg ,entry->waiting[i]);
+        
+    }   
     /* Send message to each waiting thread */
     im = disable();
     for (i = 0; i < entry->count; i++)

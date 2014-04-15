@@ -91,13 +91,10 @@ syscall arpRecv(struct packet *pkt)
         {
             entry->state = ARP_RESOLVED;
             if(SYSERR == arpNotify(entry, ARP_MSG_RESOLVED))
-            {
                 ARP_TRACE("Error while notifying waiting threads");                            
-            }
             else
-            {
                 ARP_TRACE("Notified waiting threads");   
-            }
+
         }
     }
 

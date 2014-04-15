@@ -329,6 +329,9 @@ qemu:
 tap:
 	sudo qemu-system-arm -M versatilepb -m 128M -nographic -cpu arm1176 -net nic,model=smc91c111,vlan=0 -net tap,vlan=0,ifname=tap0 -net dump,vlan=0,file=$(TOPDIR)/dump.pcap -kernel xinu.boot 
 
+tap-gdb:
+        sudo qemu-system-arm -M versatilepb -m 128M -nographic -cpu arm1176 -net nic,model=smc91c111,vlan=0 -net tap,vlan=0,ifname=tap0 -net dump,vlan=0,file=$(TOPDIR)/dump.pcap -kernel xinu.boot -S -s
+
 
 gdb:
 	qemu-system-arm -M versatilepb -m 128M -nographic -cpu arm1176 -net nic,model=smc91c111 -kernel xinu.boot -S -s

@@ -48,14 +48,14 @@ devcall etherOpen(device *devptr)
         goto out_free_out_pool;
     }
 
+    /* Open and Initialize the SMC91111*/
     smc_init(ethptr);
+    
     /* Success!  Set the device to ETH_STATE_UP. */
     ethptr->state = ETH_STATE_UP;
     retval = OK;
     goto out_restore;
 
-out_free_in_pool:
-    bfpfree(ethptr->inPool);
 out_free_out_pool:
     bfpfree(ethptr->outPool);
 out_restore:

@@ -57,8 +57,8 @@ typedef unsigned long int		dword;
 #define CONFIG_SMC_USE_32_BIT
 
 /*For Buffer pooling*/
-#define SMC_MAX_TX_REQUESTS 1
-#define SMC_MAX_RX_REQUESTS 1
+#define SMC_MAX_TX_REQUESTS 4
+#define SMC_MAX_RX_REQUESTS 4
 /*
  . DEBUGGING LEVELS
  .
@@ -777,7 +777,7 @@ enum {
 
 #define SMC_DISABLE_INT(a,x) {\
 		unsigned char mask;\
-		SMC_SELECT_BANK(2);\
+		SMC_SELECT_BANK((a),2);\
 		mask = SMC_inb( (a), IM_REG );\
 		mask &= ~(x);\
 		SMC_outb( (a), mask, IM_REG ); \
@@ -796,54 +796,39 @@ enum {
 	IM_MDINT)
 
 
-/*
- * Open and Initialize the board
- *
- * Set up everything, reset the card, etc ..
- *
- */
+/*--------------------------------------------------------------------------
+ . Open and Initialize the board. Set up everything, reset the card, etc 
+ -------------------------------------------------------------------------*/
  int smc_init(struct ether *dev);
 
-/*
+/*--------------------------------------------------------------------------
  . Function:  smc_send(struct net_device * )
- . Purpose:
- .	This sends the actual packet to the SMC9xxx chip.
- .
- . Algorithm:
- .	First, see if a saved_skb is available.
- .		( this should NOT be called if there is no 'saved_skb'
- .	Now, find the packet number that the chip allocated
- .	Point the data pointers at it in memory
- .	Set the length word in the chip's memory
- .	Dump the packet to chip memory
- .	Check if a last byte is needed ( odd length packet )
- .		if so, set the control flag right
- .	Tell the card to send it
- .	Enable the transmit interrupt, so I know if it failed
- .	Free the kernel data if I actually sent it.
-*/
-int smc_send(struct ether *dev, void *packet, int packet_length);
+ .--------------------------------------------------------------------------*/
+  int smc_send(struct ether *dev, void *packet, int packet_length);
 
+/*--------------------------------------------------------------------------
+ .  receive a packet from the card
+ . -------------------------------------------------------------------------*/
+  int smc_rcv(struct ether *dev, void *buf);
 
-/*------------------------------------------------------------
- . Writes a register to the MII Management serial interface
- .-------------------------------------------------------------*/
-void smc_write_phy_register (struct ether *dev, byte phyreg,
-	word phydata);
-	
-/*------------------------------------------------------------
- . Reads a register from the MII Management serial interface
- .-------------------------------------------------------------*/
-word smc_read_phy_register (struct ether *dev, byte phyreg);
+/*--------------------------------------------------------------------------
+ . closes down the SMC91xxx chip.
+ .--------------------------------------------------------------------------*/
+  void smc_halt(struct ether *dev);
 
-/*------------------------------------------------------------
+/*--------------------------------------------------------------------------
  . Modify a bit in the LAN91C111 register set
- .-------------------------------------------------------------*/
-word smc_modify_regbit(struct ether *dev, int bank, int ioaddr, int reg,
-	unsigned int bit, int val);
+ .-------------------------------------------------------------------------*/
+  word smc_modify_regbit(struct ether *dev, int bank, int ioaddr, int reg, unsigned int bit, int val);
 
-/*
+/*------------------------------------------------------------
+ . Retrieve a bit in the LAN91C111 register set
+ .-------------------------------------------------------------*/
+int smc_get_regbit(struct ether *dev, int bank, int ioaddr, int reg, unsigned int bit);
+
+/*--------------------------------------------------------------------------
  . Reads a MAC address from EPROM
-*/	
+ . ------------------------------------------------------------------------*/	
 	int smc_read_hwaddr(struct ether *dev, uchar *macaddr);
+	
 #endif  /* _SMC_91111_H_ */

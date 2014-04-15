@@ -58,7 +58,7 @@
 
 #define NO_AUTOPROBE
 
-#define SMC_DEBUG 2
+#define SMC_DEBUG 0
 
 #if SMC_DEBUG > 1
 static const char version[] =
@@ -381,7 +381,7 @@ static void smc_enable(struct ether *dev)
  .	the manual says that it will wake up in response to any I/O requests
  .	in the register space.	 Empirical results do not show this working.
 */
-static void smc_halt(struct ether *dev)
+void smc_halt(struct ether *dev)
 {
 	PRINTK2("%s: smc_halt\n", SMC_DEV_NAME);
 
@@ -428,26 +428,7 @@ int smc_send(struct ether *dev, void *packet, int packet_length)
 	byte saved_pnr;
 	word saved_ptr;
 
-  // MMU reset
-  /*SMC_SELECT_BANK (dev, 2);
-	smc_wait_mmu_release_complete (dev);
-	SMC_outw (dev, MC_RESET, MMU_CMD_REG);
-	while (SMC_inw (dev, MMU_CMD_REG) & MC_BUSY)
-		udelay (1); */
-  
-  // Print intterupt Mask
-  SMC_SELECT_BANK (dev, 2);
-  kprintf("\n MASK IM_RCV_INT : %d", ((SMC_inw (dev, IM_REG) & IM_RCV_INT))?1:0);
-  kprintf("\n MASK IM_ALLOC_INT : %d", ((SMC_inw (dev, IM_REG) & IM_ALLOC_INT))?1:0);
-  kprintf("\n MASK IM_TX_EMPTY_INT : %d", ((SMC_inw (dev, IM_REG) & IM_TX_EMPTY_INT))?1:0);
-  kprintf("\n MASK IM_TX_INT : %d", ((SMC_inw (dev, IM_REG) & IM_TX_INT))?1:0);
-    
-  kprintf("\n INT IM_RCV_INT : %d", ((SMC_inw (dev, SMC91111_INT_REG) & IM_RCV_INT))?1:0);
-  kprintf("\n INT IM_ALLOC_INT : %d", ((SMC_inw (dev, SMC91111_INT_REG) & IM_ALLOC_INT))?1:0);
-  kprintf("\n INT IM_TX_EMPTY_INT : %d\n", ((SMC_inw (dev, SMC91111_INT_REG) & IM_TX_EMPTY_INT))?1:0);
-  kprintf("\n INT IM_TX_INT : %d", ((SMC_inw (dev, SMC91111_INT_REG) & IM_TX_INT))?1:0);
-  
-	/* save PTR and PNR registers before manipulation */
+  /* save PTR and PNR registers before manipulation */
 	SMC_SELECT_BANK (dev, 2);
 	saved_pnr = SMC_inb( dev, PN_REG );
 	saved_ptr = SMC_inw( dev, PTR_REG );
@@ -603,56 +584,20 @@ again:
 	/* and let the chipset deal with it */
 	SMC_outw (dev, MC_ENQUEUE, MMU_CMD_REG);
 
-	/* poll for TX INT */
-	/* if (poll4int (dev, IM_TX_INT, SMC_TX_TIMEOUT)) { */
-	/* poll for TX_EMPTY INT - autorelease enabled */
-	if (poll4int(dev, IM_TX_EMPTY_INT, SMC_TX_TIMEOUT)) {
-		/* sending failed */
-		PRINTK2 ("%s: TX timeout, sending failed...\n", SMC_DEV_NAME);
-
-		/* release packet */
-		/* no need to release, MMU does that now */
-#ifdef CONFIG_XAENIAX
-		 SMC_outw (dev, MC_FREEPKT, MMU_CMD_REG);
-#endif
-
-		/* wait for MMU getting ready (low) */
-		while (SMC_inw (dev, MMU_CMD_REG) & MC_BUSY) {
-			udelay (10);
-		}
-
-		PRINTK2 ("MMU ready\n");
+ /* enable the interrupts */ 
+	SMC_ENABLE_INT(dev, (IM_TX_INT | IM_TX_EMPTY_INT));
+	
+  PRINTK2 ("%s: Sent packet of length %d \n", SMC_DEV_NAME, length);
 
 
-		return 0;
-	} else {
-		/* ack. int */
-		SMC_outb (dev, IM_TX_EMPTY_INT, SMC91111_INT_REG);
-		/* SMC_outb (IM_TX_INT, SMC91111_INT_REG); */
-		PRINTK2 ("%s: Sent packet of length %d \n", SMC_DEV_NAME,
-			 length);
+	/* wait for MMU getting ready (low) */
+	while (SMC_inw (dev, MMU_CMD_REG) & MC_BUSY) {
+		udelay (10);
+	}
 
-		/* release packet */
-		/* no need to release, MMU does that now */
-#ifdef CONFIG_XAENIAX
-		SMC_outw (dev, MC_FREEPKT, MMU_CMD_REG);
-#endif
+	PRINTK2 ("MMU ready\n");
 
-		/* wait for MMU getting ready (low) */
-		while (SMC_inw (dev, MMU_CMD_REG) & MC_BUSY) {
-			udelay (10);
-		}
-
-		PRINTK2 ("MMU ready\n");
-  }
-  
-  if (poll4int(dev, IM_RCV_INT, SMC_TX_TIMEOUT)) {
-      PRINTK2 ("%s: Packet not recieved  \n", SMC_DEV_NAME);  
-  }else{
-      PRINTK2 ("%s: Packet recieved  \n", SMC_DEV_NAME);
-  }
-
-	/* restore previously saved registers */
+ /* restore previously saved registers */
 #ifndef CONFIG_XAENIAX
 	SMC_outb( dev, saved_pnr, PN_REG );
 #else
@@ -664,7 +609,12 @@ again:
 #endif
 	SMC_outw( dev, saved_ptr, PTR_REG );
 	
-	return length;
+	/* As send function add control bytes to original packet so 
+	 * packet length is increasing which is causing problem etherwrite 
+	 * function so returning original packet length 
+	 */
+	
+	return packet_length;
 }
 
 static int smc_write_hwaddr(struct ether *dev)
@@ -748,8 +698,7 @@ int smc_read_hwaddr(struct ether *dev, uchar *macaddr)
  . o otherwise, read in the packet
  --------------------------------------------------------------
 */
-#if 0
-int smc_rcv(struct ether *dev)
+int smc_rcv(struct ether *dev, void *buf)
 {
 	int	packet_number;
 	word	status;
@@ -808,13 +757,13 @@ int smc_rcv(struct ether *dev)
 		   to send the DWORDs or the bytes first, or some
 		   mixture.  A mixture might improve already slow PIO
 		   performance	*/
-		SMC_insl( dev, SMC91111_DATA_REG, NetRxPackets[0],
+		SMC_insl( dev, SMC91111_DATA_REG, buf,
 			packet_length >> 2 );
 		/* read the left over bytes */
 		if (packet_length & 3) {
 			int i;
 
-			byte *tail = (byte *)(NetRxPackets[0] +
+			byte *tail = (byte *)(buf +
 				(packet_length & ~3));
 			dword leftover = SMC_inl(dev, SMC91111_DATA_REG);
 			for (i=0; i<(packet_length & 3); i++)
@@ -823,14 +772,14 @@ int smc_rcv(struct ether *dev)
 #else
 		PRINTK3(" Reading %d words and %d byte(s) \n",
 			(packet_length >> 1 ), packet_length & 1 );
-		SMC_insw(dev, SMC91111_DATA_REG , NetRxPackets[0],
+		SMC_insw(dev, SMC91111_DATA_REG , buf,
 			packet_length >> 1);
 
 #endif /* USE_32_BIT */
 
 #if	SMC_DEBUG > 2
 		kprintf("Receiving Packet\n");
-		print_packet( NetRxPackets[0], packet_length );
+		print_packet( buf, packet_length );
 #endif
 	} else {
 		/* error ... */
@@ -860,15 +809,13 @@ int smc_rcv(struct ether *dev)
 	SMC_outw( dev, saved_ptr, PTR_REG );
 
 	if (!is_error) {
-		/* Pass the packet up to the protocol layers. */
-		NetReceive(NetRxPackets[0], packet_length);
 		return packet_length;
 	} else {
 		return 0;
 	}
 
 }
-#endif /*0*/
+
 
 
 /*------------------------------------------------------------
@@ -890,11 +837,11 @@ word smc_modify_regbit(struct ether *dev, int bank, int ioaddr, int reg, unsigne
 	return(regval);
 }
 
-#if 0
+
 /*------------------------------------------------------------
  . Retrieve a bit in the LAN91C111 register set
  .-------------------------------------------------------------*/
-static int smc_get_regbit(struct ether *dev, int bank, int ioaddr, int reg, unsigned int bit)
+int smc_get_regbit(struct ether *dev, int bank, int ioaddr, int reg, unsigned int bit)
 {
 	SMC_SELECT_BANK( dev, bank );
 	if ( SMC_inw( dev, reg ) & bit)
@@ -903,6 +850,7 @@ static int smc_get_regbit(struct ether *dev, int bank, int ioaddr, int reg, unsi
 		return(0);
 }
 
+#if 0
 
 /*------------------------------------------------------------
  . Modify a LAN91C111 register (word access only)
@@ -973,7 +921,7 @@ static void smc_dump_mii_stream (byte * bits, int size)
  . Reads a register from the MII Management serial interface
  .-------------------------------------------------------------*/
 #ifndef CONFIG_SMC91111_EXT_PHY
-word smc_read_phy_register (struct ether *dev, byte phyreg)
+static word smc_read_phy_register (struct ether *dev, byte phyreg)
 {
 	int oldBank;
 	int i;
@@ -1090,7 +1038,7 @@ word smc_read_phy_register (struct ether *dev, byte phyreg)
 /*------------------------------------------------------------
  . Writes a register to the MII Management serial interface
  .-------------------------------------------------------------*/
- void smc_write_phy_register (struct ether *dev, byte phyreg,
+static void smc_write_phy_register (struct ether *dev, byte phyreg,
 	word phydata)
 {
 	int oldBank;

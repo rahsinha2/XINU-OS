@@ -15,8 +15,7 @@ devcall etherControl(device *devptr, int req, long arg1, long arg2)
     
     struct netaddr *addr;
     struct ether *ethptr;
-    word regContent;
-    
+     
     ethptr = &ethertab[devptr->minor];
 
     switch (req)

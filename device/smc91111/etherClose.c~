@@ -13,7 +13,7 @@
 devcall etherClose(device *devptr)
 {
     struct ether *ethptr;
-    irqmask im;
+    irqmask  im;
     im = disable();
     
     ethptr = &ethertab[devptr->minor];
