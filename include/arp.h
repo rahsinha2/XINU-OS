@@ -12,7 +12,7 @@
 #include <network.h>
 
 /* Tracing macros */
-#define TRACE_ARP     CONSOLE
+//#define TRACE_ARP     CONSOLE
 #ifdef TRACE_ARP
 #include <stdio.h>
 #define ARP_TRACE(...)     { \
