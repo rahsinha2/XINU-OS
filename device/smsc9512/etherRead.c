@@ -49,7 +49,7 @@ devcall etherRead(device *devptr, void *buf, uint len)
     }
     
     /* Copy packet into packet Buffer*/
-    memcpy(pkt->buf, buf, len);
+    memcpy( buf, pkt->buf, len);
 
     /* Return the packet buffer to the pool, then return the length of the
      * packet received.  */
