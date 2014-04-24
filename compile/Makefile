@@ -12,14 +12,14 @@
 # platform for this Embedded Xinu distribution, but you can override this on the
 # command line without modifying this Makefile; e.g. with
 #
-# $ make PLATFORM=arm-rpi
+# $ make PLATFORM=arm-qemu
 #
-PLATFORM := arm-qemu
+PLATFORM := arm-rpi
 
 # These need to be changed
-NODE=30
-GPORT=55${NODE}
-USERNAME=adorwat
+NODE=0
+GPORT=55$${NODE}
+USERNAME=user
 
 # Filename of boot image to create (platform can override it if really needed)
 BOOTIMAGE := xinu.boot
