@@ -9,7 +9,7 @@
 #include <interrupt.h>
 #include <stdlib.h>
 #include <thread.h>
-#include <kernel.h>
+
 /**
  * @ingroup arp
  *

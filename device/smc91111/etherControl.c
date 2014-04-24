@@ -32,7 +32,6 @@ devcall etherControl(device *devptr, int req, long arg1, long arg2)
 
     /* Enable or disable loopback mode.  */
     case ETH_CTRL_SET_LOOPBK:
-        printf("\n Loop back mode: %d", ((bool)arg1 == TRUE) ? 1 : 0);
         smc_modify_regbit(ethptr, 0, CONFIG_SMC91111_BASE, TCR_REG, TCR_EPH_LOOP,((bool)arg1 == TRUE) ? 1 : 0);
         break;
 

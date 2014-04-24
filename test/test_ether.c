@@ -22,15 +22,6 @@ struct etherGram
     char dst[ETH_ADDR_LEN];     /* Destination MAC */
     char src[ETH_ADDR_LEN];     /* Source MAC */
     ushort type_len;            /* EthernetII type/Ethernet length */
-    ushort hwd_type;   
-    ushort proto_type;
-    uchar hwd_add_len;
-    uchar proto_add_len;
-    ushort opcode;
-    char sender_hwd_add[ETH_ADDR_LEN];     
-    char sender_proto_add[ETH_ADDR_LEN];
-    char target_hwd_add[ETH_ADDR_LEN];     
-    char target_proto_add[ETH_ADDR_LEN];
     char payload[1];            /* Payload data */
 };
 #endif /* NETHER */
@@ -92,16 +83,6 @@ static int ethn_test(bool verbose, int devminor)
     memcpy(outpkt->dst, mymac, ETH_ADDR_LEN);
     memcpy(outpkt->src, mymac, ETH_ADDR_LEN);
     outpkt->type_len = hs2net(ETH_TYPE_ARP);
-    outpkt->hwd_type = 0x0100;
-    outpkt->proto_type = hs2net(ETH_TYPE_ARP);
-    outpkt->hwd_add_len = 0x06;
-    outpkt->proto_add_len = 0x06;
-    outpkt->opcode = 0x0100;
-    memcpy(outpkt->sender_hwd_add, mymac, ETH_ADDR_LEN);
-    memcpy(outpkt->sender_proto_add, mymac, ETH_ADDR_LEN);
-    bzero(outpkt->target_hwd_add, ETH_ADDR_LEN);   
-    memcpy(outpkt->target_proto_add, mymac, ETH_ADDR_LEN);  
-    
 
     /* generate payload content */
     for (i = 0; i < MAX_PAYLOAD; i++)
@@ -173,7 +154,7 @@ static int ethn_test(bool verbose, int devminor)
     testPrint(verbose, str);
     subpass = TRUE;
 
-    /*for (i = 0; i < 512; i++)
+    for (i = 0; i < 512; i++)
     {
         len = 32 + (rand() % 1200);
         value = write(dev, outpkt, len);
@@ -188,7 +169,7 @@ static int ethn_test(bool verbose, int devminor)
         {
             subpass = FALSE;
         }
-    }*/
+    }
     failif((TRUE != subpass), "");
 
     /* ether out of loopback mode */

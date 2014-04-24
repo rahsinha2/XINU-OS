@@ -1,6 +1,7 @@
 # Object files
 *.o
 *~
+*.pcap
 
 # Dependency files
 *.d
