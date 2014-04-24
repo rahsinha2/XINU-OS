@@ -14,7 +14,12 @@
 #
 # $ make PLATFORM=arm-rpi
 #
-PLATFORM := arm-qemu
+PLATFORM := arm-rpi
+
+# These need to be changed
+NODE=30
+GPORT=55${NODE}
+USERNAME=adorwat
 
 # Filename of boot image to create (platform can override it if really needed)
 BOOTIMAGE := xinu.boot
@@ -27,7 +32,7 @@ TOPDIR  := ..
 CFLAGS  :=
 
 # Do not perform linking until the end.
-CFLAGS  += -c
+CFLAGS  += -c -g
 
 # Optimize for size.
 CFLAGS  += -Os
@@ -81,7 +86,7 @@ CFLAGS  += $(DEBUG)
 #
 # Note: this -I option is not used for C headers; instead it's used in case the
 # platform wants to include other files directly from assembly sources.
-ASFLAGS := -I$(TOPDIR)/system/platforms/$(PLATFORM)
+ASFLAGS := -I$(TOPDIR)/system/platforms/$(PLATFORM) -g
 
 # Set linker flags common to all platforms.  platformVars can add additional
 # flags if needed.  Do not use the "-Wl," prefix either here on in platformVars.
@@ -323,20 +328,6 @@ indent:
 	$(INDENT) $(INDENT_ARGS) $(INDENT_TYPES) $(INDENT_FILES)
 	rm -f $(INDENT_FILES:%=%~)
 
-qemu:
-	qemu-system-arm -M versatilepb -m 128M -nographic -cpu arm1176 -net nic,model=smc91c111,vlan=0 -net dump,vlan=0,file=$(TOPDIR)/dump.pcap -net user,vlan=0 -kernel xinu.boot
-
-tap:
-	sudo qemu-system-arm -M versatilepb -m 128M -nographic -cpu arm1176 -net nic,model=smc91c111,vlan=0 -net tap,vlan=0,ifname=tap0 -net dump,vlan=0,file=$(TOPDIR)/dump.pcap -kernel xinu.boot 
-
-tap-gdb:
-        sudo qemu-system-arm -M versatilepb -m 128M -nographic -cpu arm1176 -net nic,model=smc91c111,vlan=0 -net tap,vlan=0,ifname=tap0 -net dump,vlan=0,file=$(TOPDIR)/dump.pcap -kernel xinu.boot -S -s
-
-
-gdb:
-	qemu-system-arm -M versatilepb -m 128M -nographic -cpu arm1176 -net nic,model=smc91c111 -kernel xinu.boot -S -s
-
-
 # XXX: Hack to deal with special device directories.
 DEVDOCCOMPS := $(DEVCOMPS)
 ifneq ($(filter uart-%,$(DEVICES)),)
@@ -414,3 +405,22 @@ DEPFILES := $(DEPFILES:%.S=%.d)
 # Ensure the default `make' target is set correctly--- it's supposed to be
 # $(BOOTIMAGE) and defined in "platformVars".
 .DEFAULT_GOAL := $(BOOTIMAGE)
+
+# For SoIC RPI cluster
+download:
+	ssh cyclops rm -f /home/tftpboot/rpi${NODE}.img
+	scp xinu.boot ${USERNAME}@cyclops:/home/tftpboot/rpi${NODE}.img
+	ssh cyclops chmod go+rw /home/tftpboot/rpi${NODE}.img
+	rpipower off ${NODE}
+	sleep 1
+	rpipower on ${NODE}
+reset:
+	rpipower off ${NODE}
+	sleep 1
+	rpipower on ${NODE}
+
+qemu:
+	qemu-system-arm -M versatilepb -m 128M -nographic -cpu arm1176  -kernel xinu.boot 
+
+qemu-gdb:
+	qemu-system-arm -M versatilepb -m 128M -nographic -cpu arm1176  -kernel xinu.boot -S -gdb tcp::${GPORT}

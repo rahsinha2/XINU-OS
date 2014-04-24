@@ -1,1 +1,1 @@
-#define VERSION "(Embedded Xinu) (arm-qemu) #2 (adorwat@silo.soic.indiana.edu) Tue Apr 15 15:18:59 EDT 2014"
+#define VERSION "(Embedded Xinu) (arm-rpi) #0 (adorwat@silo.soic.indiana.edu) Wed Apr 23 23:56:40 EDT 2014"

@@ -30,7 +30,7 @@
 #include <vlan.h>
 
 /* ETH Buffer lengths */
-#define ETH_IBLEN           1024 /**< input buffer size                 */
+//#define ETH_IBLEN           1024 /**< input buffer size                 */
 
 /* Ethernet DMA buffer sizes */
 #define ETH_MTU             1500 /**< Maximum transmission units        */
@@ -80,8 +80,6 @@ struct ether
     /* Pointers to associated structures */
     device *dev;                /**< eth device structure               */
     void *csr;                  /**< control and status registers       */
-
-    int iobase;
 
     ulong interruptMask;        /**< interrupt mask                     */
     ulong interruptStatus;      /**< interrupt status                   */

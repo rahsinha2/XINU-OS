@@ -8,7 +8,6 @@
 #include <stddef.h>
 #include <thread.h>
 #include <clock.h>
-#include <kernel.h>
 
 /**
  * @ingroup threads
@@ -19,7 +18,7 @@
  */
 message recvtime(int maxwait)
 {
-    struct thrent *thrptr;
+    register struct thrent *thrptr;
     irqmask im;
     message msg;
 
@@ -27,8 +26,6 @@ message recvtime(int maxwait)
     {
         return SYSERR;
     }
-
-    
     im = disable();
     thrptr = &thrtab[thrcurrent];
     if (FALSE == thrptr->hasmsg)
@@ -46,7 +43,8 @@ message recvtime(int maxwait)
         return SYSERR;
 #endif
     }
-    if (thrptr->hasmsg == TRUE)
+
+    if (thrptr->hasmsg)
     {
         msg = thrptr->msg;      /* retrieve message              */
         thrptr->hasmsg = FALSE; /* reset message flag            */
