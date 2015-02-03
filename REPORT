@@ -5,6 +5,53 @@ A: We are getting interleaved output by the two threads consumer and producer be
 Q: Are all the produced values getting consumed? Check your program for a small count like 20.
 A: No. all the produced values are not getting consumed because consumer waits 	for the output device to send the characters to console and in the meantime the producer runs and increments the value of 'n'.
 
+Output for 20
+=============
+xsh$ prodcons 20
+produced : 0
+producedconsumed : 1
+consu : 1
+produced : 2med : 1
+consumed : 2
+produced : 3
+p
+consumed : 4
+consuroduced : 4
+producemed : 4
+consumed : d : 5
+produced : 6
+5
+consumed : prod6
+consumed : 7
+conuced : 7
+produced : sumed : 7
+consumed 8
+produced : 9
+prod: 8
+consumed : 10
+uced : 10
+produced consumed : 10
+consum: 11
+produced : 12ed : 11
+consumed : 
+produced : 13
+prod12
+consumed : 14
+cuceonsumed : 14
+cod : 14
+produced : 1nsumed : 14
+consume5
+produced : 16
+prod : 15
+consumed : 1duced : 17
+produced7
+consumed : 18
+con : 18
+produced : 1sumed : 18
+9
+produced : 20
+xsh$ 
+
 List of functions:
 1) void producer (int count);
 	Produces all values less than or equal to count.
