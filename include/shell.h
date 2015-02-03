@@ -127,4 +127,5 @@ shellcmd xsh_vlanstat(int, char *[]);
 shellcmd xsh_voip(int, char *[]);
 shellcmd xsh_xweb(int, char *[]);
 shellcmd xsh_hello(int, char *[]);		// added prototype for hello
+shellcmd xsh_prodcons(int, char *[]);		// added prototype for prodcons
 #endif                          /* _SHELL_H_ */
