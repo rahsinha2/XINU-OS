@@ -1,0 +1,17 @@
+Q: Does your program output any garbage? If yes, why?
+A: We are getting interleaved output by the two threads consumer and producer because we are not using synchronization techniques like semaphore or mutex in the critical section concerning the use of global variable 'n'.
+
+
+Q: Are all the produced values getting consumed? Check your program for a small count like 20.
+A: No. all the produced values are not getting consumed because consumer waits 	for the output device to send the characters to console and in the meantime the producer runs and increments the value of 'n'.
+
+List of functions:
+1) void producer (int count);
+	Produces all values less than or equal to count.
+	Prints all produced values.
+2) void consumer (int count);
+	Consumes values of global variable 'n' until the value
+     	of n is less than or equal to count.
+	Prints all consumed values.
+
+All the tasks has been done collaboratively by us.
