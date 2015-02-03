@@ -41,7 +41,7 @@ shellcmd xsh_prodcons(int nargs, char *args[])
 	/* Check if its an integer */
 	for ( i = 0; i < strlen(args[1]); i++ )	{
 		if ( !isdigit(args[1][i]) ) 	{
-        		fprintf(stderr, "%s: argument not an integer\n", args[0]);
+        		fprintf(stderr, "%s: argument is not a valid positive integer\n", args[0]);
         		return SYSERR;
 		}
 	}	
