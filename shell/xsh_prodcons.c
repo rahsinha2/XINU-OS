@@ -6,7 +6,7 @@
 
 #include <prodcons.h>
 
-int n;		/* Global Variable */
+int n = 0;		/* Global Variable */
 /**
  *
  * Shell command (prodcons).

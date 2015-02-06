@@ -13,6 +13,7 @@ void producer(int count)
 	for ( i = 0; i <= count; i++ )	{
 		n = i;
 		printf("produced : %d\n", i);
+
 	}	
 
 }
