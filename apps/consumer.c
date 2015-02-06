@@ -10,8 +10,8 @@ void consumer(int count)
 {
 	int i = 0;
 	
-	for ( i = 0; i <= count; i++ )	{
+	while (n<count)	{
 		printf("consumed : %d\n", n);
-	}	
-
+	}
+		printf("consumed : %d\n", n);
 }
