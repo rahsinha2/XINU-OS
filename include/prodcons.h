@@ -13,10 +13,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <semaphore.h>
 /* Global variable declaration for producer consumer */
 
 extern int n;
-
+extern semaphore produced;
+extern semaphore consumed;
 /* Function Prototype */
 
 void consumer(int count);

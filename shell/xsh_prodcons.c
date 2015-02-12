@@ -7,6 +7,8 @@
 #include <prodcons.h>
 
 int n = 0;		/* Global Variable */
+semaphore produced;	/* Semaphore */
+semaphore consumed;
 /**
  *
  * Shell command (prodcons).
@@ -20,6 +22,8 @@ shellcmd xsh_prodcons(int nargs, char *args[])
     int count = 0;
     char count_string[20];
     memset(count_string, 0, 20);
+    consumed = semcreate(1);
+    produced = semcreate(0);
     /* Output help, if '--help' argument was supplied */
     if (nargs == 2 && strcmp(args[1], "--help") == 0)
     {
