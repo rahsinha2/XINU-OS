@@ -1,0 +1,45 @@
+Q: How exactly is sychronization achieved using semaphore in our assignnment?
+A: In this assignment, the objective is the producer produces an item which gets consumed by the consumer, and with the help of syncronisation all the items produced gets consumed serially. Hence we use two semaphores "Produced" and "Consumed". We initialize Produced = 0 and Consumed = 1. So the producer function waits on Consumed which is initially 1 and it decrements it to 0. It then executes its critical section and then signals Produced(increments Produced from 0 to 1). Now the consumer function which was waiting on the semaphore Produced(initially 0 and now 1) decrements the semaphore Produced to 0 from 1 and executes the critical section. It then signals the semaphore Consumed and then again the consumer function comes into play. In this way all the items produced by the producer function gets consumed by the consumer function in a serial fashion.
+
+Q: Can the above sychronization be achieved with just one semphaore? Why or why not?
+A: We cannot achieve the above syncronization with one semaphore because, in this specific problem i.e. the producer-consumer problem, we always want the producer function to produce an item before the consumer function can consume it. In other words we want that the producer function gets called first when the command line executes and then after an item is produced the consumer consumes it. If we use a single semaphore or mutex there may be a race condiotion and the consumer function may get called beforehand even when the producer function did not get a chance to produce an item. 
+
+Output for 10
+=============
+xsh$ prodcons 10
+produced : 0
+consumed : 0
+produced : 1
+consumed : 1
+produced : 2
+consumed : 2
+produced : 3
+consumed : 3
+produced : 4
+consumed : 4
+produced : 5
+consumed : 5
+produced : 6
+consumed : 6
+produced : 7
+consumed : 7
+produced : 8
+consumed : 8
+produced : 9
+consumed : 9
+produced : 10
+consumed : 10
+xsh$ 
+
+List of functions:
+1) void producer (int count);
+	Produces all values less than or equal to count.
+	Prints all produced values.
+2) void consumer (int count);
+	Consumes values of global variable 'n' until the value
+     	of n is less than or equal to count.
+	Prints all consumed values.
+
+No new functions were written for assignment 3. Only semcreate was used additionally.
+
+All the tasks has been done collaboratively by us.
