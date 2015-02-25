@@ -17,6 +17,9 @@ C_FILES += clkinit.c clkhandler.c mdelay.c udelay.c insertd.c sleep.c unsleep.c 
 # Files for semaphores
 C_FILES += semcreate.c semfree.c semcount.c signal.c signaln.c wait.c
 
+# Files for future
+C_FILES += future_alloc.c future_free.c future_set.c future_get.c
+
 # Files for monitors
 C_FILES += moncreate.c monfree.c moncount.c lock.c unlock.c
 

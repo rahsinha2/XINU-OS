@@ -1,0 +1,23 @@
+Output
+=======
+xsh$ prodcons -f
+it produced 5187356
+it produced 5187372
+it produced 5187388
+it produced 5187404
+xsh$ 
+
+List of implementations:
+
+1) Created the header file include/future.h having the following
+	States, modes, future data structure definition, prototype of the system calls future_alloc(), future_free(), future_get(), future_set().
+	Also contains prototype for future_prod(), future_cons().
+2) Modified xsh_prodcons.c such that when -f is passed as argument, futures are used and not semaphores.
+
+3) apps/future_prod.c : produces an integer and calls future_set().
+
+4) apps/future_cons.c : calls future_get(), prints the consumed integer and then calls future_free().	
+
+5) system calls: definition of the 4 system calls future_alloc(), future_free(), future_get(), future_set().
+
+All the tasks has been done collaboratively by us.
