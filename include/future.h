@@ -10,6 +10,7 @@
 #define FUTURE_EXCLUSIVE  1	
 
 #include<stddef.h>
+#include<interrupt.h>
 typedef struct futent
 {
    int value;		
