@@ -8,15 +8,27 @@
 
 /* modes of operation for future*/
 #define FUTURE_EXCLUSIVE  1	
+#define FUTURE_SHARED  	  2	
+#define FUTURE_QUEUE      3	
+
+#define QSIZE 10
 
 #include<stddef.h>
 #include<interrupt.h>
+#include<queue.h>
+#include<myqueue.h>
 typedef struct futent
 {
    int value;		
    int flag;		
    int state;         	
    tid_typ tid;
+   int head_getq;
+   int tail_getq;
+   int head_setq;
+   int tail_setq;
+   tid_typ set_queue[QSIZE];
+   tid_typ get_queue[QSIZE];
 } future;
 
 /* Interface for system call */
