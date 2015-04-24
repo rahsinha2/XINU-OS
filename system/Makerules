@@ -23,6 +23,9 @@ C_FILES += future_alloc.c future_free.c future_set.c future_get.c myqueue.c
 # Files for monitors
 C_FILES += moncreate.c monfree.c moncount.c lock.c unlock.c
 
+# Files for in memory file system
+C_FILES += fs.c fopen.c fclose.c fwrite.c fread.c fseek.c fcreate.c
+
 # Files for memory management
 C_FILES += memget.c memfree.c stkget.c bfpalloc.c bfpfree.c bufget.c buffree.c
 

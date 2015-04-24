@@ -14,7 +14,8 @@
 #
 # $ make PLATFORM=arm-rpi
 #
-PLATFORM := arm-rpi
+//PLATFORM := arm-rpi
+PLATFORM := arm-qemu
 
 # These need to be changed
 NODE=26
